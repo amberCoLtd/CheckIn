@@ -51,8 +51,14 @@
         }
 
         function clearTel() {
-            localStorage.removeItem('tel');  // 清除 localStorage 中的電話號碼
-            document.getElementById("telStatus").innerText = "已清除電話，打卡時重輸電話";  // 顯示 "換電話"
+            let password = prompt("請輸入密碼以清除電話號碼:");
+            const correctPassword = "20938096";  // 設定密碼
+            if (password === correctPassword) {
+                localStorage.removeItem('tel');  // 清除 localStorage 中的電話號碼
+                document.getElementById("telStatus").innerText = "已清除電話，打卡時重輸電話";  // 顯示 "換電話"
+            } else {
+                document.getElementById("telStatus").innerText = "密碼錯誤，無法清除電話號碼。";  // 顯示錯誤訊息
+            }
         }
 
         window.onload = checkBrowser; // 頁面載入時檢查瀏覽器
