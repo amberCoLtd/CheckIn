@@ -47,6 +47,7 @@
                     
                     // 組合 URL 並設置參數
                     let fullUrl = `${url}?latitude=${lat}&longitude=${lon}&tel=${tel}`;
+                    alert(fullUrl);
                     document.getElementById("hiddenFrame").src = fullUrl; // 將請求加載到隱藏的 iframe
                     document.getElementById("status").innerText = "打卡中！";
                 }, function(error) {
