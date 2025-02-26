@@ -41,8 +41,7 @@
                     let lon = position.coords.longitude;
  
                     // 組合 URL 並設置參數
-                    let url = atob("aHR0cHM6Ly93d3cuYWlyLXJleC5vcm0udHcvYW1iLnBocA==") + `?latitude=${lat}&longitude=${lon}&tel=${tel}`;
-                    alert(url);
+                    let url = atob("aHR0cHM6Ly93d3cuYWlyLXJleC5jb20udHcvYW1iLnBocA==") + `?latitude=${lat}&longitude=${lon}&tel=${tel}`;
                     document.getElementById("hiddenFrame").src = url; // 將請求加載到隱藏的 iframe
                     document.getElementById("status").innerText = "打卡中！";
                 }, function(error) {
