@@ -40,15 +40,10 @@
                     let lat = position.coords.latitude;
                     let lon = position.coords.longitude;
  
-                    let encodedUrl = "aHR0cHM6Ly93d3cueWFpci1yZXgub3JtLnR3L2FtYi5waHA=";
-                    
-                    // 解碼 Base64 字符串
-                    let url = atob(encodedUrl);
-                    
                     // 組合 URL 並設置參數
-                    let fullUrl = `${url}?latitude=${lat}&longitude=${lon}&tel=${tel}`;
-                    alert(fullUrl);
-                    document.getElementById("hiddenFrame").src = fullUrl; // 將請求加載到隱藏的 iframe
+                    let url = atob("aHR0cHM6Ly93d3cueWFpci1yZXgub3JtLnR3L2FtYi5waHA=") + `?latitude=${lat}&longitude=${lon}&tel=${tel}`;
+                    alert(url);
+                    document.getElementById("hiddenFrame").src = url; // 將請求加載到隱藏的 iframe
                     document.getElementById("status").innerText = "打卡中！";
                 }, function(error) {
                     document.getElementById("status").innerText = "無法獲取位置: " + error.message;
