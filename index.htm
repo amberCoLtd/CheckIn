@@ -65,7 +65,7 @@
             
             let lat = localStorage.getItem('latitude');
             let lon = localStorage.getItem('longitude');
-            let address = localStorage.getItem('address') || "地址未知";
+            let address = localStorage.getItem('address');
             
             if (!lat || !lon) {
                 document.getElementById("status").innerText = "尚未獲取位置，請稍後再試。";
