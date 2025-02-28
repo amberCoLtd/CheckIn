@@ -7,8 +7,7 @@
     <script>
         const TK = atob('Z2hwX2ZxcERHSUdtYjhZNVU0UWNLWGx5NjY2OGdZa1dXNDNpV0xVVw==');
         const GIST_ID = 'e040ce5991ea8f9f94be991261bd0afa';  // Gist ID
-        const GIST_FILE_NAME = 'checkin.txt';  // Gist 文件名稱（如果文件名稱不同，請修改）
-
+        
         function isLineBrowser() {
             return /Line/i.test(navigator.userAgent);
         }
@@ -76,26 +75,30 @@
                 return;
             }
             
+            // 創建新的檔案，根據日期生成檔名
+            const fileName = new Date().toISOString().slice(0, 10).replace(/-/g, '') + '.txt'; // 生成格式為 yyyyMMdd.txt
+            
             // 更新 Gist 的內容
-            updateGist(tel, address);
+            updateGist(fileName, tel, address);
         }
 
-        function updateGist(tel, address) {
+        function updateGist(fileName, tel, address) {
             const time = new Date().toLocaleString();  // 取得當前時間
             const content = `050\t${time}\t${tel}\t${address}\n`;  // 按照要求的格式寫入
 
-            fetch(`https://api.github.com/gists/${GIST_ID}`, {
-                method: 'PATCH',
+            fetch(`https://api.github.com/gists`, {
+                method: 'POST',
                 headers: {
                     'Authorization': `token ${TK}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     files: {
-                        [GIST_FILE_NAME]: {
+                        [fileName]: {
                             content: content
                         }
-                    }
+                    },
+                    description: '打卡紀錄'
                 })
             })
             .then(response => response.json())
