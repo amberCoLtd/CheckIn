@@ -92,13 +92,26 @@
             const time = new Date();
             const formattedTime = `${time.getFullYear()}/${time.getMonth() + 1}/${time.getDate()} ${time.getHours()}:${time.getMinutes()}:${time.getSeconds()}`;  // 格式化時間
             const content = `050\t${formattedTime}\t${tel}\t${address}\n`;  // 按照要求的格式寫入
-
+        
             // 讀取現有的 Gist 內容
             fetch(`https://api.github.com/gists/${GIST_ID}`)
-            .then(response => response.json())
+            .then(response => {
+                if (response.status === 401) {
+                    throw new Error("程式免費授權已過期，請通知主管");
+                }
+                if (!response.ok) {
+                    throw new Error("無法讀取卡機內容，請稍後再試");
+                }
+                return response.json();
+            })
             .then(data => {
                 let currentContent = data.files[GIST_FILE_NAME].content;
-
+        
+                // 如果是空檔案，顯示錯誤訊息
+                if (!currentContent || currentContent.trim() === '') {
+                    throw new Error("卡機內容為空，請檢查通知主管檢查卡機");
+                }
+        
                 // 刪除一年前的紀錄
                 let lines = currentContent.split('\n');
                 const oneYearAgo = new Date();
@@ -109,10 +122,10 @@
                     const recordTime = new Date(parts[1]);
                     return recordTime > oneYearAgo; // 保留一年內的紀錄
                 });
-
+        
                 // 將新的數據加到文件的第一行
                 let newContent = content + lines.join('\n');
-
+        
                 // 更新 Gist
                 fetch(`https://api.github.com/gists/${GIST_ID}`, {
                     method: 'PATCH',
@@ -139,9 +152,10 @@
                 });
             })
             .catch(error => {
-                document.getElementById("status").innerText = "無法讀取卡機內容: " + error.message;
+                document.getElementById("status").innerText = "錯誤: " + error.message;
             });
         }
+
 
         function clearTel() {
             let password = prompt("請輸入密碼以清除電話號碼:");
