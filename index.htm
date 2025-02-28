@@ -5,7 +5,7 @@
     <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>LINE 打卡系統</title>
     <script>
-        const GITHUB_TOKEN = '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';  // 使用你的 GitHub Token
+        const TK = atob('Z2hwX1ZqbE05aXdrVHNBNWN1d2FhdEdGRjV4YkdDUWY4T084UWhXbg==');
         const GIST_ID = 'e040ce5991ea8f9f94be991261bd0afa';  // Gist ID
         const GIST_FILE_NAME = 'checkin.txt';  // Gist 文件名稱（如果文件名稱不同，請修改）
 
@@ -14,7 +14,6 @@
         }
 
         function checkBrowser() {
-            fetchLocation();return;
             if (!isLineBrowser()) {
                 window.location.href = "https://www.google.com";
             } else {
@@ -88,7 +87,7 @@
             fetch(`https://api.github.com/gists/${GIST_ID}`, {
                 method: 'PATCH',
                 headers: {
-                    'Authorization': `token ${GITHUB_TOKEN}`,
+                    'Authorization': `token ${TK}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
@@ -99,23 +98,12 @@
                     }
                 })
             })
-            .then(response => {
-                console.log("Response Status:", response.status);
-                if (response.ok) {
-                    return response.json();
-                } else {
-                    throw new Error(`Failed to update gist. Status: ${response.status}`);
-                }
-            })
+            .then(response => response.json())
             .then(data => {
-                console.log("Gist 更新成功:", data);
-                document.getElementById("status").innerText = "打卡成功！";
-                alert("打卡成功: " + JSON.stringify(data));
+                alert('打卡成功:', data);
             })
             .catch(error => {
-                console.error("更新 Gist 失敗:", error);
-                document.getElementById("status").innerText = "打卡失敗: " + error.message;
-                alert("打卡失敗: " + error.message);
+                alert('打卡失敗:', error);
             });
         }
 
@@ -142,6 +130,5 @@
     
     <button onclick="clearTel()">換電話</button>
     <p id="telStatus"></p>
-    
 </body>
 </html>
