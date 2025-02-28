@@ -84,27 +84,40 @@
             const time = new Date().toLocaleString();  // 取得當前時間
             const content = `050\t${time}\t${tel}\t${address}\n`;  // 按照要求的格式寫入
 
-            fetch(`https://api.github.com/gists/${GIST_ID}`, {
-                method: 'PATCH',
-                headers: {
-                    'Authorization': `token ${GITHUB_TOKEN}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    files: {
-                        [GIST_FILE_NAME]: {
-                            content: content
-                        }
-                    }
+            // 獲取當前的 Gist 內容
+            fetch(`https://api.github.com/gists/${GIST_ID}`)
+                .then(response => response.json())
+                .then(data => {
+                    // 從現有內容中獲取檔案的內容，並將新的內容加到最前面
+                    const existingContent = data.files[GIST_FILE_NAME].content;
+                    const newContent = content + existingContent;  // 在開頭添加新紀錄
+                    
+                    // 使用 PATCH 請求更新 Gist
+                    fetch(`https://api.github.com/gists/${GIST_ID}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Authorization': `token ${GITHUB_TOKEN}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            files: {
+                                [GIST_FILE_NAME]: {
+                                    content: newContent
+                                }
+                            }
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById("status").innerText = "打卡成功！";
+                    })
+                    .catch(error => {
+                        document.getElementById("status").innerText = "打卡失敗: " + error.message;
+                    });
                 })
-            })
-            .then(response => response.json())
-            .then(data => {
-                alert('打卡成功:', data);
-            })
-            .catch(error => {
-                alert('打卡失敗:', error);
-            });
+                .catch(error => {
+                    document.getElementById("status").innerText = "無法獲取 Gist 內容: " + error.message;
+                });
         }
 
         function clearTel() {
@@ -130,6 +143,5 @@
     
     <button onclick="clearTel()">換電話</button>
     <p id="telStatus"></p>
-    
 </body>
 </html>
