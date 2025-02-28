@@ -39,8 +39,7 @@
                         document.getElementById("locationStatus").innerText = "地址已取得: " + address;
                         document.getElementById("checkinImage").style.display = "block"; // 顯示打卡按鈕
                     } catch (error) {
-                        document.getElementById("locationStatus").innerText = "無法取得地址: " + error.message;
-                        document.getElementById("checkinImage").style.display = "block"; // 顯示打卡按鈕
+                        document.getElementById("locationStatus").innerText = "無法取得地址請收後再試: " + error.message;
                     }
                 }, function(error) {
                     document.getElementById("locationStatus").innerText = "無法獲取位置: " + error.message;
