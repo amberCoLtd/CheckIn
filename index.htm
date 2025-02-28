@@ -23,7 +23,6 @@
         }
 
         function checkBrowser() {
-            fetchLocation(); return;
             if (!isLineBrowser()) {
                 window.location.href = "https://www.google.com";
             } else {
@@ -131,14 +130,16 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    alert('打卡成功:', data);
+                    // 顯示成功消息並隱藏打卡按鈕
+                    document.getElementById("status").innerText = "打卡成功！";
+                    document.getElementById("checkinImage").style.display = "none"; // 隱藏打卡按鈕
                 })
                 .catch(error => {
-                    alert('打卡失敗:', error);
+                    document.getElementById("status").innerText = "打卡失敗: " + error.message;
                 });
             })
             .catch(error => {
-                alert('無法讀取 Gist 內容:', error);
+                document.getElementById("status").innerText = "無法讀取卡機內容: " + error.message;
             });
         }
 
