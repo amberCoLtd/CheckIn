@@ -90,7 +90,7 @@
 
         function updateGist(tel, address) {
             const time = new Date();
-            const formattedTime = `${time.getFullYear()}/${time.getMonth() + 1}/${time.getDate()} ${time.getHours()}:${time.getMinutes()}:${time.getSeconds()}`;  // 格式化時間
+            const formattedTime = `${time.getFullYear()}/${(time.getMonth() + 1).toString().padStart(2, '0')}/${time.getDate().toString().padStart(2, '0')} ${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}:${time.getSeconds().toString().padStart(2, '0')}`;
             const content = `050\t${formattedTime}\t${tel}\t${address}\n`;  // 按照要求的格式寫入
         
             // 讀取現有的 Gist 內容
