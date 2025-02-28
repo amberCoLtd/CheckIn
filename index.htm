@@ -5,6 +5,10 @@
     <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>LINE 打卡系統</title>
     <script>
+        const GITHUB_TOKEN = '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';  // 使用你的 GitHub Token
+        const GIST_ID = 'e040ce5991ea8f9f94be991261bd0afa';  // Gist ID
+        const GIST_FILE_NAME = 'checkin.txt';  // Gist 文件名稱（如果文件名稱不同，請修改）
+
         function isLineBrowser() {
             return /Line/i.test(navigator.userAgent);
         }
@@ -25,7 +29,7 @@
                     localStorage.setItem('latitude', lat);
                     localStorage.setItem('longitude', lon);
                     localStorage.setItem('address', "");
-                  
+
                     try {
                         let response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
                         let data = await response.json();
@@ -67,14 +71,40 @@
             let lon = localStorage.getItem('longitude');
             let address = localStorage.getItem('address');
             
-            if (!lat || !lon) {
+            if (!lat || !lon || !address) {
                 document.getElementById("status").innerText = "尚未獲取位置，請稍後再試。";
                 return;
             }
             
-            let url = atob("aHR0cHM6Ly93d3cuYWlyLXJleC5jb20udHcvYW1iLnBocA==") + `?latitude=${lat}&longitude=${lon}&address=${encodeURIComponent(address)}&tel=${tel}`;
-            document.getElementById("hiddenFrame").src = url;
-            document.getElementById("status").innerText = "打卡中！";
+            // 更新 Gist 的內容
+            updateGist(tel, address);
+        }
+
+        function updateGist(tel, address) {
+            const time = new Date().toLocaleString();  // 取得當前時間
+            const content = `050\t${time}\t${tel}\t${address}\n`;  // 按照要求的格式寫入
+
+            fetch(`https://api.github.com/gists/${GIST_ID}`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `token ${GITHUB_TOKEN}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    files: {
+                        [GIST_FILE_NAME]: {
+                            content: content
+                        }
+                    }
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert('打卡成功:', data);
+            })
+            .catch(error => {
+                alert('打卡失敗:', error);
+            });
         }
 
         function clearTel() {
@@ -93,7 +123,7 @@
 </head>
 <body>
     <a href="#" onclick="sendLocation()">
-        <img id="checkinImage" style="display: none;"  src="checkin.png" />
+        <img id="checkinImage" style="display: none;" src="checkin.png" />
     </a>
     <p id="status"></p>
     <p id="locationStatus">位置獲取中...</p>
@@ -101,6 +131,5 @@
     <button onclick="clearTel()">換電話</button>
     <p id="telStatus"></p>
     
-    <iframe id="hiddenFrame" style="display: none;"></iframe>
 </body>
 </html>
