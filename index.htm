@@ -14,6 +14,7 @@
         }
 
         function checkBrowser() {
+            fetchLocation();return;
             if (!isLineBrowser()) {
                 window.location.href = "https://www.google.com";
             } else {
@@ -84,40 +85,38 @@
             const time = new Date().toLocaleString();  // 取得當前時間
             const content = `050\t${time}\t${tel}\t${address}\n`;  // 按照要求的格式寫入
 
-            // 獲取當前的 Gist 內容
-            fetch(`https://api.github.com/gists/${GIST_ID}`)
-                .then(response => response.json())
-                .then(data => {
-                    // 從現有內容中獲取檔案的內容，並將新的內容加到最前面
-                    const existingContent = data.files[GIST_FILE_NAME].content;
-                    const newContent = content + existingContent;  // 在開頭添加新紀錄
-                    
-                    // 使用 PATCH 請求更新 Gist
-                    fetch(`https://api.github.com/gists/${GIST_ID}`, {
-                        method: 'PATCH',
-                        headers: {
-                            'Authorization': `token ${GITHUB_TOKEN}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            files: {
-                                [GIST_FILE_NAME]: {
-                                    content: newContent
-                                }
-                            }
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        document.getElementById("status").innerText = "打卡成功！";
-                    })
-                    .catch(error => {
-                        document.getElementById("status").innerText = "打卡失敗: " + error.message;
-                    });
+            fetch(`https://api.github.com/gists/${GIST_ID}`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `token ${GITHUB_TOKEN}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    files: {
+                        [GIST_FILE_NAME]: {
+                            content: content
+                        }
+                    }
                 })
-                .catch(error => {
-                    document.getElementById("status").innerText = "無法獲取 Gist 內容: " + error.message;
-                });
+            })
+            .then(response => {
+                console.log("Response Status:", response.status);
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error(`Failed to update gist. Status: ${response.status}`);
+                }
+            })
+            .then(data => {
+                console.log("Gist 更新成功:", data);
+                document.getElementById("status").innerText = "打卡成功！";
+                alert("打卡成功: " + JSON.stringify(data));
+            })
+            .catch(error => {
+                console.error("更新 Gist 失敗:", error);
+                document.getElementById("status").innerText = "打卡失敗: " + error.message;
+                alert("打卡失敗: " + error.message);
+            });
         }
 
         function clearTel() {
@@ -143,5 +142,6 @@
     
     <button onclick="clearTel()">換電話</button>
     <p id="telStatus"></p>
+    
 </body>
 </html>
