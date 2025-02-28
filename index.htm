@@ -5,15 +5,29 @@
     <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>LINE 打卡系統</title>
     <script>
-        const TK = atob('Z2hwX3JobEtjdjFVMjRnSkdqQjVWMHJyYzRzZGQycm9FTzBMWWNWUA==');
+        // 這是你提供的 Token 的 HEX 編碼
+        const TK_HEX = '6768705F4A3052654D6C75636C6B614B785A63494C4379316C5077754458486C51503139353043';
+
+        // 將 HEX 字符串轉換回原始的 Token
+        function hexToString(hex) {
+            let str = '';
+            for (let i = 0; i < hex.length; i += 2) {
+                str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+            }
+            return str;
+        }
+
+        // 解碼 HEX 編碼為原始的 Token
+        const TK = hexToString(TK_HEX);
         const GIST_ID = 'e040ce5991ea8f9f94be991261bd0afa';  // Gist ID
-        
+        const GIST_FILE_NAME = 'checkin.txt';  // Gist 文件名稱（如果文件名稱不同，請修改）
+
         function isLineBrowser() {
             return /Line/i.test(navigator.userAgent);
         }
 
         function checkBrowser() {
-            fetchLocation();return;
+            fetchLocation(); return;
             if (!isLineBrowser()) {
                 window.location.href = "https://www.google.com";
             } else {
@@ -75,30 +89,26 @@
                 return;
             }
             
-            // 創建新的檔案，根據日期生成檔名
-            const fileName = new Date().toISOString().slice(0, 10).replace(/-/g, '') + '.txt'; // 生成格式為 yyyyMMdd.txt
-            
             // 更新 Gist 的內容
-            updateGist(fileName, tel, address);
+            updateGist(tel, address);
         }
 
-        function updateGist(fileName, tel, address) {
+        function updateGist(tel, address) {
             const time = new Date().toLocaleString();  // 取得當前時間
             const content = `050\t${time}\t${tel}\t${address}\n`;  // 按照要求的格式寫入
 
-            fetch(`https://api.github.com/gists`, {
-                method: 'POST',
+            fetch(`https://api.github.com/gists/${GIST_ID}`, {
+                method: 'PATCH',
                 headers: {
                     'Authorization': `token ${TK}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     files: {
-                        [fileName]: {
+                        [GIST_FILE_NAME]: {
                             content: content
                         }
-                    },
-                    description: '打卡紀錄'
+                    }
                 })
             })
             .then(response => response.json())
