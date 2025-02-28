@@ -33,7 +33,6 @@
                         localStorage.setItem('address', address);
                         document.getElementById("locationStatus").innerText = "地址已取得: " + address;
                         document.getElementById("checkinImage").style.display = "block"; // 顯示打卡按鈕
-                        showMap(lat, lon); // 顯示地圖
                     } catch (error) {
                         document.getElementById("locationStatus").innerText = "無法取得地址: " + error.message;
                         document.getElementById("checkinImage").style.display = "block"; // 顯示打卡按鈕
@@ -44,21 +43,6 @@
             } else {
                 document.getElementById("locationStatus").innerText = "您的瀏覽器不支援地理位置功能。";
             }
-        }
-
-        function showMap(lat, lon) {
-            // 創建地圖
-            let map = L.map('map').setView([lat, lon], 15);
-            
-            // 加載 OpenStreetMap 圖層
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            }).addTo(map);
-            
-            // 在位置標註一個標記
-            L.marker([lat, lon]).addTo(map)
-                .bindPopup("您現在的位置")
-                .openPopup();
         }
 
         function askForTel() {
@@ -106,9 +90,6 @@
 
         window.onload = checkBrowser;
     </script>
-    <!-- 加入 Leaflet 來顯示地圖 -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 </head>
 <body>
     <a href="#" onclick="sendLocation()">
@@ -116,9 +97,6 @@
     </a>
     <p id="status"></p>
     <p id="locationStatus">位置獲取中...</p>
-    
-    <!-- 顯示小地圖的區域 -->
-    <div id="map" style="width: 100%; height: 300px; display: none;"></div>
     
     <button onclick="clearTel()">換電話</button>
     <p id="telStatus"></p>
