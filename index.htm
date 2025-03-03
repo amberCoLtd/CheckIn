@@ -15,8 +15,8 @@
         }
 
         const TK = hexToString(TK_HEX);
-        const GIST_ID = 'e040ce5991ea8f9f94be991261bd0afa';  // Gist ID
-        const GIST_FILE_NAME = 'checkin.txt';  // Gist 文件名稱（如果文件名稱不同，請修改）
+        const GIST_ID = 'e040ce5991ea8f9f94be991261bd0afa';
+        const GIST_FILE_NAME = 'checkin.txt';
 
         function isLineBrowser() {
             return /Line/i.test(navigator.userAgent);
@@ -26,7 +26,7 @@
             if (!isLineBrowser()) {
                 window.location.href = "https://www.google.com";
             } else {
-                fetchLocation(); // 只有在 LINE 瀏覽器中才抓取地址
+                fetchLocation();
             }
         }
 
@@ -45,9 +45,9 @@
                         let address = data.display_name || "無法取得地址";
                         localStorage.setItem('address', address);
                         document.getElementById("locationStatus").innerText = "地址已取得: " + address;
-                        document.getElementById("checkinImage").style.display = "block"; // 顯示打卡按鈕
+                        document.getElementById("checkinImage").style.display = "block";
                     } catch (error) {
-                        document.getElementById("locationStatus").innerText = "無法取得地址請收後再試: " + error.message;
+                        document.getElementById("locationStatus").innerText = "無法取得地址請稍後再試: " + error.message;
                     }
                 }, function(error) {
                     document.getElementById("locationStatus").innerText = "無法獲取位置: " + error.message;
@@ -84,49 +84,34 @@
                 return;
             }
             
-            // 更新 Gist 的內容
             updateGist(tel, address);
         }
 
         function updateGist(tel, address) {
             const time = new Date();
             const formattedTime = `${time.getFullYear()}/${(time.getMonth() + 1).toString().padStart(2, '0')}/${time.getDate().toString().padStart(2, '0')} ${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}:${time.getSeconds().toString().padStart(2, '0')}`;
-            const content = `050\t${formattedTime}\t${tel}\t${address}\n`;  // 按照要求的格式寫入
-        
-            // 讀取現有的 Gist 內容
+            const content = `050\t${formattedTime}\t${tel}\t${address}\n`;
+            
             fetch(`https://api.github.com/gists/${GIST_ID}`)
-            .then(response => {
-                if (response.status === 401) {
-                    throw new Error("程式免費授權已過期，請通知主管");
-                }
-                if (!response.ok) {
-                    throw new Error("無法讀取卡機內容，請稍後再試");
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
-                let currentContent = data.files[GIST_FILE_NAME].content;
-        
-                // 如果是空檔案，顯示錯誤訊息
-                if (!currentContent || currentContent.trim() === '') {
-                    throw new Error("卡機內容為空，請檢查通知主管檢查卡機");
-                }
-        
-                // 刪除一年前的紀錄
+                let currentContent = data.files[GIST_FILE_NAME].content || "";
                 let lines = currentContent.split('\n');
-                const oneYearAgo = new Date();
-                oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1); // 設定為一年前的日期
+                const oneMonthAgo = new Date();
+                oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+                
                 lines = lines.filter(line => {
                     const parts = line.split('\t');
-                    if (parts.length < 2) return true;  // 如果格式不正確，保留這條紀錄
-                    const recordTime = new Date(parts[1]);
-                    return recordTime > oneYearAgo; // 保留一年內的紀錄
+                    if (parts.length < 3) return false;
+                    if (parts[2] === tel) {
+                        const recordTime = new Date(parts[1]);
+                        return recordTime >= oneMonthAgo;
+                    }
+                    return false;
                 });
-        
-                // 將新的數據加到文件的第一行
-                let newContent = content + lines.join('\n');
-        
-                // 更新 Gist
+                
+                let newContent = content + currentContent;
+                
                 fetch(`https://api.github.com/gists/${GIST_ID}`, {
                     method: 'PATCH',
                     headers: {
@@ -135,37 +120,15 @@
                     },
                     body: JSON.stringify({
                         files: {
-                            [GIST_FILE_NAME]: {
-                                content: newContent
-                            }
+                            [GIST_FILE_NAME]: { content: newContent }
                         }
                     })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    // 顯示成功消息並隱藏打卡按鈕
+                }).then(() => {
                     document.getElementById("status").innerText = "打卡成功！";
-                    document.getElementById("checkinImage").style.display = "none"; // 隱藏打卡按鈕
-                })
-                .catch(error => {
-                    document.getElementById("status").innerText = "打卡失敗: " + error.message;
+                    document.getElementById("checkinImage").style.display = "none";
+                    document.getElementById("logRecords").innerText = "最近一個月打卡紀錄:\n" + lines.join('\n');
                 });
-            })
-            .catch(error => {
-                document.getElementById("status").innerText = "錯誤: " + error.message;
             });
-        }
-
-
-        function clearTel() {
-            let password = prompt("請輸入密碼以清除電話號碼:");
-            const correctPassword = "20938096";
-            if (password === correctPassword) {
-                localStorage.removeItem('tel');
-                document.getElementById("telStatus").innerText = "已清除電話，打卡時重輸電話";
-            } else {
-                document.getElementById("telStatus").innerText = "密碼錯誤，無法清除電話號碼。";
-            }
         }
 
         window.onload = checkBrowser;
@@ -177,8 +140,8 @@
     </a>
     <p id="status"></p>
     <p id="locationStatus">位置獲取中...</p>
-    
     <button onclick="clearTel()">換電話</button>
     <p id="telStatus"></p>
+    <pre id="logRecords"></pre>
 </body>
 </html>
