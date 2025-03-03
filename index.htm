@@ -126,7 +126,7 @@
                 }).then(() => {
                     document.getElementById("status").innerText = "打卡成功！";
                     document.getElementById("checkinImage").style.display = "none";
-                    document.getElementById("logRecords").innerText = "最近一個月打卡紀錄:\n" + lines.join('\n');
+                    document.getElementById("logRecords").innerText = "最近一個月打卡紀錄:\n" + content + lines.join('\n');
                 });
             });
         }
