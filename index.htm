@@ -90,27 +90,32 @@
         function updateGist(tel, address) {
             const time = new Date();
             const formattedTime = `${time.getFullYear()}/${(time.getMonth() + 1).toString().padStart(2, '0')}/${time.getDate().toString().padStart(2, '0')} ${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}:${time.getSeconds().toString().padStart(2, '0')}`;
-            const content = `050\t${formattedTime}\t${tel}\t${address}\n`;
+            const content = `050\t${formattedTime}\t${tel}\t${address}\r\n`;
             
             fetch(`https://api.github.com/gists/${GIST_ID}`)
             .then(response => response.json())
             .then(data => {
                 let currentContent = data.files[GIST_FILE_NAME].content || "";
                 let lines = currentContent.split('\n');
+                const oneYearAgo = new Date();
+                oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
                 const oneMonthAgo = new Date();
                 oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
                 
                 lines = lines.filter(line => {
                     const parts = line.split('\t');
                     if (parts.length < 3) return false;
-                    if (parts[2] === tel) {
-                        const recordTime = new Date(parts[1]);
-                        return recordTime >= oneMonthAgo;
-                    }
-                    return false;
+                    const recordTime = new Date(parts[1]);
+                    return recordTime >= oneYearAgo;
                 });
                 
-                let newContent = content + currentContent;
+                let newContent = content + lines.join('\n');
+                let recentLogs = lines.filter(line => {
+                    const parts = line.split('\t');
+                    if (parts.length < 3) return false;
+                    const recordTime = new Date(parts[1]);
+                    return recordTime >= oneMonthAgo;
+                }).join('\n');
                 
                 fetch(`https://api.github.com/gists/${GIST_ID}`, {
                     method: 'PATCH',
@@ -126,7 +131,7 @@
                 }).then(() => {
                     document.getElementById("status").innerText = "打卡成功！";
                     document.getElementById("checkinImage").style.display = "none";
-                    document.getElementById("logRecords").innerText = "最近一個月打卡紀錄:\n" + content + lines.join('\n');
+                    document.getElementById("logRecords").innerText = "最近一個月打卡紀錄:\n" + recentLogs;
                 });
             });
         }
