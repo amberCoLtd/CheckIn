@@ -114,7 +114,7 @@
                     const parts = line.split('\t');
                     if (parts.length < 3) return false;
                     const recordTime = new Date(parts[1]);
-                    return recordTime >= oneMonthAgo;
+                    return recordTime >= oneMonthAgo && parts[2] === tel;
                 }).join('\n');
                 
                 fetch(`https://api.github.com/gists/${GIST_ID}`, {
