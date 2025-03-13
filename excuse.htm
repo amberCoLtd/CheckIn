@@ -30,7 +30,6 @@
             }
             return name;
         }
-
         function fetchLeaveRecords(name) {
             fetch(`https://api.github.com/gists/${GIST_ID}`)
             .then(response => response.json())
@@ -56,15 +55,14 @@
                 console.error('Error fetching Gist:', error);
             });
         }
-
         function submitLeave() {
-            let button = document.getElementById("submitButton");
-            button.disabled = true;
+			let button = document.getElementById("submitButton");
+            button.disabled = true; // 送出後按鈕反灰
             button.innerText = "申請中...";
-            
+			
             let name = askForName();
             if (name === null) return;
-            
+
             let startDate = document.getElementById("startDate").value;
             let endDate = document.getElementById("endDate").value;
             let startTime = document.getElementById("startTime").value;
@@ -81,7 +79,64 @@
             updateGist(content, name, startDateTime, endDateTime);
         }
 
-        window.onload = function () {
+        function updateGist(content, name, startTime, endTime) {
+            fetch(`https://api.github.com/gists/${GIST_ID}`)
+            .then(response => response.json())
+            .then(data => {
+                let currentContent = data.files[GIST_FILE_NAME]?.content || "";
+                let lines = currentContent.split('\n');
+                const oneMonthAgo = new Date();
+                oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+                lines = lines.filter(line => {
+                    const parts = line.split('\t');
+                    if (parts.length < 3) return false;
+                    const recordTime = new Date(parts[1]);
+                    return recordTime >= oneMonthAgo && parts[0] === name;
+                });
+
+                let newContent = content + currentContent;
+                return fetch(`https://api.github.com/gists/${GIST_ID}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `token ${TK}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        files: { [GIST_FILE_NAME]: { content: newContent } }
+                    })
+                }).then(() => lines);
+            })
+            .then(lines => {
+                notifyLeave(name, startTime, endTime, lines);
+            });
+        }
+
+        function notifyLeave(name, startTime, endTime, lines) {
+            const reviewLink = `https://ambercoltd.github.io/CheckIn/excusepermit.htm`;
+            const msg = `<b>姓名:</b> ${name}<br><b>開始:</b> ${startTime}<br><b>結束:</b> ${endTime}<br><br>` +
+                        `<a href='${reviewLink}'>前往審核</a><br><br>最近一個月請假紀錄:<br>` + lines.join('<br>');
+            const url = `https://www.air-rex.com.tw/email.php`;
+            
+            fetch(url, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
+                    to: 'eason@amberco.com.tw',
+                    subject: '假單送簽',
+                    msg: msg
+                })
+            }).then(() => {
+                document.getElementById("status").innerHTML = `請假申請已提交！通知已發送！<br><br>最近一個月請假紀錄:<br>` + lines.join('<br>');
+            }).catch(error => {
+                console.error('Error:', error);
+            });
+        }
+        
+         window.onload = function () {
             let name = localStorage.getItem('name');
             if (name) {
                 fetchLeaveRecords(name);
@@ -92,14 +147,14 @@
 <body>
     <h2>請假系統</h2>
     <label>開始日期：</label>
-    <input type="date" id="startDate">
+    <input type="date" id="startDate" min="08:30">
     <label>開始時間：</label>
     <select id="startTime">
         <script>
             for (let hour = 8; hour <= 17; hour++) {
                 for (let min of [0, 30]) {
                     let time = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
-                    let selected = (hour === 8 && min === 30) ? 'selected' : '';
+					let selected = (hour === 8 && min === 30) ? 'selected' : '';
                     document.write(`<option value="${time}" ${selected}>${time}</option>`);
                 }
             }
