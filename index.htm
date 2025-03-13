@@ -9,22 +9,12 @@
         const GIST_ID = '7c94f03f1def80b2e4236a199f257c63';
         const GIST_FILE_NAME = 'checkin.txt';
         const TK = hexToString(TK_HEX);
-        const PASSWORD_HASH = '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8'; // 'password' 的 SHA-256 Hash
 
         function hexToString(hex) {
             let str = '';
             for (let i = 0; i < hex.length; i += 2)
                 str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
             return str;
-        }
-
-        async function hashPassword(password) {
-            const encoder = new TextEncoder();
-            const data = encoder.encode(password); // 將密碼轉為 Uint8Array
-            const hashBuffer = await crypto.subtle.digest('SHA-256', data); // 計算 SHA-256 Hash
-            const hashArray = Array.from(new Uint8Array(hashBuffer)); // 將結果轉為字節數組
-            const hashHex = hashArray.map(byte => byte.toString(16).padStart(2, '0')).join(''); // 轉為十六進制字符串
-            return hashHex;
         }
 
         function isLineBrowser() {
@@ -125,9 +115,9 @@
             }
         }
 
-        async function clearTel() {
+        function clearTel() {
             const pwd = prompt("請輸入密碼以清除電話號碼：");
-            if (pwd && (await hashPassword(pwd)) === PASSWORD_HASH) {
+            if (pwd === '20938096') {
                 localStorage.removeItem('tel');
                 document.getElementById("telStatus").innerText = "電話號碼已清除，請重新輸入。";
             } else {
