@@ -59,36 +59,36 @@
             let button = document.getElementById("submitButton");
             button.disabled = true;
             button.innerText = "申請中...";
-
+        
             let name = askForName();
             if (name === null) return;
-
+        
             let startDate = document.getElementById("startDate").value;
             let endDate = document.getElementById("endDate").value;
             let startTime = document.getElementById("startTime").value;
             let endTime = document.getElementById("endTime").value;
             let leaveType = document.getElementById("leaveType").value;
             let reason = document.getElementById("reason").value;
-
+        
             if (!startDate || !endDate || !startTime || !endTime || !leaveType || !reason) {
                 document.getElementById("status").innerText = "請完整填寫所有欄位。";
                 button.disabled = false;
                 button.innerText = "送出請假申請";
                 return;
             }
-
+        
             const startDateTime = `${startDate}T${startTime}`;
             const endDateTime = `${endDate}T${endTime}`;
             const content = `${name}\t${startDateTime}\t${endDateTime}\t${leaveType}\t${reason}\r\n`;
-           
-            notifyLeave(content, name, startDateTime, endDateTime, leaveType, reason);
-            //updateGist(content, name, startDateTime, endDateTime, leaveType, reason);
-        }
         
-        function notifyLeave(content, name, startTime, endTime, leaveType, reason, lines) {
+            notifyLeave(content, name, startDateTime, endDateTime, leaveType, reason);
+        }
+
+        
+        function notifyLeave(content, name, startTime, endTime, leaveType, reason) {
             const reviewLink = `https://ambercoltd.github.io/CheckIn/excusepermit.htm`;
             const msg = `姓名: ${name}\n假別: ${leaveType}\n原因: ${reason}\n開始: ${startTime}\n結束: ${endTime}\n\n` +
-                        `前往審核:${reviewLink}\n\n最近一個月請假紀錄:\n` + lines.join('\n');
+                        `前往審核:${reviewLink}\n\n最近一個月請假紀錄:\n` + document.getElementById("status").innerHTML.replace("<br>","\n");
         
             // 使用 FormSubmit 發送 Email
             let formData = new FormData();
