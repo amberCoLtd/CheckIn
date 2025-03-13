@@ -75,6 +75,7 @@
                     
                     return fetch(`https://api.github.com/gists/${GIST_ID}`, {
                         method: 'PATCH',
+                        mode: 'no-cors',
                         headers: {
                             'Authorization': `token ${TK}`,
                             'Content-Type': 'application/json'
