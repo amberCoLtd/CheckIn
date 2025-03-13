@@ -55,11 +55,11 @@
                 console.error('Error fetching Gist:', error);
             });
         }
-        function submitLeave() {
-	    let button = document.getElementById("submitButton");
-            button.disabled = true; // 送出後按鈕反灰
+       function submitLeave() {
+            let button = document.getElementById("submitButton");
+            button.disabled = true;
             button.innerText = "申請中...";
-			
+
             let name = askForName();
             if (name === null) return;
 
@@ -67,19 +67,47 @@
             let endDate = document.getElementById("endDate").value;
             let startTime = document.getElementById("startTime").value;
             let endTime = document.getElementById("endTime").value;
+            let leaveType = document.getElementById("leaveType").value;
+            let reason = document.getElementById("reason").value;
 
-            if (!startDate || !endDate || !startTime || !endTime) {
-                document.getElementById("status").innerText = "請選擇正確的請假日期與時間。";
+            if (!startDate || !endDate || !startTime || !endTime || !leaveType || !reason) {
+                document.getElementById("status").innerText = "請完整填寫所有欄位。";
+                button.disabled = false;
+                button.innerText = "送出請假申請";
                 return;
             }
 
             const startDateTime = `${startDate}T${startTime}`;
             const endDateTime = `${endDate}T${endTime}`;
-            const content = `${name}\t${startDateTime}\t${endDateTime}\r\n`;
-            updateGist(content, name, startDateTime, endDateTime);
+            const content = `${name}\t${startDateTime}\t${endDateTime}\t${leaveType}\t${reason}\r\n`;
+            updateGist(content, name, startDateTime, endDateTime, leaveType, reason);
         }
 
-        function updateGist(content, name, startTime, endTime) {
+        function notifyLeave(name, startTime, endTime, leaveType, reason, lines) {
+            const reviewLink = `https://ambercoltd.github.io/CheckIn/excusepermit.htm`;
+            const msg = `<b>姓名:</b> ${name}<br><b>假別:</b> ${leaveType}<br><b>原因:</b> ${reason}<br><b>開始:</b> ${startTime}<br><b>結束:</b> ${endTime}<br><br>` +
+                        `<a href='${reviewLink}'>前往審核</a><br><br>最近一個月請假紀錄:<br>` + lines.join('<br>');
+            const url = `https://www.air-rex.com.tw/email.php`;
+
+            fetch(url, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
+                    to: 'tokimusic@gmail.com',
+                    subject: `${name} ${leaveType} ${startTime} 假單送簽`,
+                    msg: msg
+                })
+            }).then(() => {
+                document.getElementById("status").innerHTML = `請假申請已提交！通知已發送！<br><br>最近一個月請假紀錄:<br>` + lines.join('<br>');
+            }).catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        function updateGist(content, name, startDateTime, endDateTime, leaveType, reason) {
             fetch(`https://api.github.com/gists/${GIST_ID}`)
             .then(response => response.json())
             .then(data => {
@@ -111,30 +139,6 @@
                 notifyLeave(name, startTime, endTime, lines);
             });
         }
-
-        function notifyLeave(name, startTime, endTime, lines) {
-            const reviewLink = `https://ambercoltd.github.io/CheckIn/excusepermit.htm`;
-            const msg = `<b>姓名:</b> ${name}<br><b>開始:</b> ${startTime}<br><b>結束:</b> ${endTime}<br><br>` +
-                        `<a href='${reviewLink}'>前往審核</a><br><br>最近一個月請假紀錄:<br>` + lines.join('<br>');
-            const url = `https://www.air-rex.com.tw/email.php`;
-            
-            fetch(url, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: new URLSearchParams({
-                    to: 'eason@amberco.com.tw',
-                    subject: `${name} ${startTime} 假單送簽`,
-                    msg: msg
-                })
-            }).then(() => {
-                document.getElementById("status").innerHTML = `請假申請已提交！通知已發送！<br><br>最近一個月請假紀錄:<br>` + lines.join('<br>');
-            }).catch(error => {
-                console.error('Error:', error);
-            });
-        }
         
          window.onload = function () {
             let name = localStorage.getItem('name');
@@ -146,15 +150,29 @@
 </head>
 <body>
     <h2>請假系統</h2>
+    <label>假別：</label>
+    <select id="leaveType">
+        <option value="病假">病假</option>
+        <option value="特休">特休</option>
+        <option value="事假">事假</option>
+        <option value="生理假">生理假</option>
+        <option value="家庭照顧假">家庭照顧假</option>
+        <option value="公假">公假</option>
+        <option value="其他">其他</option>
+    </select>
+    <br>
+    <label>原因：</label>
+    <input type="text" id="reason" placeholder="請輸入請假原因">
+    <br>
     <label>開始日期：</label>
-    <input type="date" id="startDate" min="08:30">
+    <input type="date" id="startDate">
     <label>開始時間：</label>
     <select id="startTime">
         <script>
             for (let hour = 8; hour <= 17; hour++) {
                 for (let min of [0, 30]) {
                     let time = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
-					let selected = (hour === 8 && min === 30) ? 'selected' : '';
+                    let selected = (hour === 8 && min === 30) ? 'selected' : '';
                     document.write(`<option value="${time}" ${selected}>${time}</option>`);
                 }
             }
@@ -176,7 +194,7 @@
         </script>
     </select>
     <br>
-   <button id="submitButton" onclick="submitLeave()">送出請假申請</button>
-   <p id="status"></p>
+    <button id="submitButton" onclick="submitLeave()">送出請假申請</button>
+    <p id="status"></p>
 </body>
 </html>
