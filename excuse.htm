@@ -16,7 +16,7 @@
         const TK = hexToString(TK_HEX);
         const GIST_ID = '2385af75e322ffc9d58c986af8f198b9';
         const GIST_FILE_NAME = 'excuse.txt';
-
+        
         function askForName() {
             let name = localStorage.getItem('name');
             if (!name) {
@@ -31,29 +31,28 @@
             return name;
         }
 
-        function validateTime(inputTime) {
-            const time = inputTime.split('T')[1];  // 取得時間部分 (HH:MM)
-            const minutes = parseInt(time.split(':')[1]);
-            return minutes === 0 || minutes === 30;  // 只允許 00 分或 30 分
-        }
-
         function submitLeave() {
+			let button = document.getElementById("submitButton");
+            button.disabled = true; // 送出後按鈕反灰
+            button.innerText = "申請中...";
+			
             let name = askForName();
             if (name === null) return;
 
-            let startDateTime = document.getElementById("startDateTime").value;
-            let endDateTime = document.getElementById("endDateTime").value;
+            let startDate = document.getElementById("startDate").value;
+            let endDate = document.getElementById("endDate").value;
+            let startTime = document.getElementById("startTime").value;
+            let endTime = document.getElementById("endTime").value;
 
-            // 檢查時間是否為 00 分或 30 分
-            if (!startDateTime || !endDateTime || !validateTime(startDateTime) || !validateTime(endDateTime)) {
-                document.getElementById("status").innerText = "請選擇正確的請假日期和時間（每半小時的整點或半點）。";
+            if (!startDate || !endDate || !startTime || !endTime) {
+                document.getElementById("status").innerText = "請選擇正確的請假日期與時間。";
                 return;
             }
-            
-            const startTime = startDateTime;
-            const endTime = endDateTime;
-            const content = `${name}\t${startTime}\t${endTime}\r\n`;
-            updateGist(content, name, startTime, endTime);
+
+            const startDateTime = `${startDate}T${startTime}`;
+            const endDateTime = `${endDate}T${endTime}`;
+            const content = `${name}\t${startDateTime}\t${endDateTime}\r\n`;
+            updateGist(content, name, startDateTime, endDateTime);
         }
 
         function updateGist(content, name, startTime, endTime) {
@@ -90,28 +89,63 @@
         }
 
         function notifyLeave(name, startTime, endTime, lines) {
-            const msg = `姓名:${name}%0A開始:${startTime}%0A結束:${endTime}`;
-            const url = `https://www.air-rex.com.tw/email.php?to=tokimusic@gmail.com&subject=假單送簽&msg=${msg}%0A最近一個月請假紀錄:%0A` + lines.join('%0A');
+            const reviewLink = `https://ambercoltd.github.io/CheckIn/excusepermit.htm`;
+            const msg = `<b>姓名:</b> ${name}<br><b>開始:</b> ${startTime}<br><b>結束:</b> ${endTime}<br><br>` +
+                        `<a href='${reviewLink}'>前往審核</a><br><br>最近一個月請假紀錄:<br>` + lines.join('<br>');
+            const url = `https://www.air-rex.com.tw/email.php`;
             
             fetch(url, {
-                method: 'GET', 
-                mode: 'no-cors',  // 使用 no-cors 模式
+                method: 'POST',
+                mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
+                    to: 'tokimusic@gmail.com',
+                    subject: '假單送簽',
+                    msg: msg
+                })
             }).then(() => {
-                document.getElementById("status").innerText = "請假申請已提交！通知已發送！\n\n最近一個月請假紀錄:\n" + lines.join('\n');
+                document.getElementById("status").innerHTML = `請假申請已提交！通知已發送！<br><br>最近一個月請假紀錄:<br>` + lines.join('<br>');
             }).catch(error => {
                 console.error('Error:', error);
             });
         }
-
     </script>
 </head>
 <body>
     <h2>請假系統</h2>
-    <label>開始日期與時間：</label>
-    <input type="datetime-local" id="startDateTime" step="1800">
-    <label>結束日期與時間：</label>
-    <input type="datetime-local" id="endDateTime" step="1800">
-    <button onclick="submitLeave()">送出請假申請</button>
-    <p id="status"></p>
+    <label>開始日期：</label>
+    <input type="date" id="startDate" min="08:30">
+    <label>開始時間：</label>
+    <select id="startTime">
+        <script>
+            for (let hour = 8; hour <= 17; hour++) {
+                for (let min of [0, 30]) {
+                    let time = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
+					let selected = (hour === 8 && min === 30) ? 'selected' : '';
+                    document.write(`<option value="${time}" ${selected}>${time}</option>`);
+                }
+            }
+        </script>
+    </select>
+    <br>
+    <label>結束日期：</label>
+    <input type="date" id="endDate">
+    <label>結束時間：</label>
+    <select id="endTime">
+        <script>
+            for (let hour = 8; hour <= 17; hour++) {
+                for (let min of [0, 30]) {
+                    let time = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
+                    let selected = (hour === 17 && min === 30) ? 'selected' : '';
+                    document.write(`<option value="${time}" ${selected}>${time}</option>`);
+                }
+            }
+        </script>
+    </select>
+    <br>
+   <button id="submitButton" onclick="submitLeave()">送出請假申請</button>
+   <p id="status"></p>
 </body>
 </html>
