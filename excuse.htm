@@ -136,7 +136,7 @@
                 }).then(() => lines);
             })
             .then(lines => {
-                notifyLeave(name, startTime, endTime, lines);
+                notifyLeave(name, startDateTime, endDateTime, leaveType, reason, lines);
             });
         }
         
