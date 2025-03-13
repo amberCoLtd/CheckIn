@@ -141,8 +141,18 @@
     </script>
 </head>
 <body>
-    <a href="#" onclick="sendLocation()">
-        <img id="checkinImage" style="display: none;" src="bt.png" />
+    <a href="#" onclick="sendLocation()" style="position: relative; display: inline-block; width: 128px; height: 128px;">
+        <img id="checkinImage" style="display: none; width: 128px; height: 128px;" src="bt.png" />
+        <span style="
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        ">打卡</span>
     </a>
     <p id="status"></p>
     <p id="locationStatus">位置獲取中...</p>
@@ -150,4 +160,5 @@
     <p id="telStatus"></p>
     <pre id="logRecords"></pre>
 </body>
+
 </html>
