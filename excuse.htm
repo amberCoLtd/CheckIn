@@ -103,7 +103,7 @@
             })
             .then(response => {
                 if (response.ok) {
-                    updateGist(content, name, startDateTime, endDateTime, leaveType, reason);
+                    updateGist(content, name, startTime, endTime, leaveType, reason);
                 } else {
                     document.getElementById("status").innerHTML = "❌ Email 發送失敗，請稍後再試。";
                 }
