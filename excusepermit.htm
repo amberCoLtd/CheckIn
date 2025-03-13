@@ -16,7 +16,7 @@
         const TK = hexToString(TK_HEX);
         const GIST_ID = '2385af75e322ffc9d58c986af8f198b9';
         const GIST_FILE_NAME = 'excuse.txt';
-        
+
         function loadData() {
             fetch(`https://api.github.com/gists/${GIST_ID}?timestamp=${new Date().getTime()}`)
             .then(response => response.json())
@@ -25,35 +25,39 @@
                 let lines = content.split('\n');
                 let tableBody = document.getElementById("records");
                 tableBody.innerHTML = "";
-                
+
                 lines.forEach((line, index) => {
                     if (!line.trim()) return;
                     let cols = line.split('\t');
                     let row = document.createElement("tr");
-                    
+
                     cols.forEach(col => {
                         let cell = document.createElement("td");
                         cell.textContent = col;
                         row.appendChild(cell);
                     });
-                    
-                    if (cols.length < 4 || !cols[3].trim()) {
+
+                    if (cols.length < 6 || !cols[5]?.trim()) {
                         let approveBtn = document.createElement("button");
                         approveBtn.textContent = "核准";
                         approveBtn.onclick = () => updateStatus(index, line, "核准", approveBtn, rejectBtn);
-                        
+
                         let rejectBtn = document.createElement("button");
                         rejectBtn.textContent = "拒絕";
                         rejectBtn.onclick = () => updateStatus(index, line, "拒絕", approveBtn, rejectBtn);
-                        
+
                         let actionCell = document.createElement("td");
                         actionCell.appendChild(approveBtn);
                         actionCell.appendChild(document.createElement("br"));
                         actionCell.appendChild(document.createElement("br"));
                         actionCell.appendChild(rejectBtn);
                         row.appendChild(actionCell);
+                    } else {
+                        let statusCell = document.createElement("td");
+                        statusCell.textContent = cols[5];
+                        row.appendChild(statusCell);
                     }
-                    
+
                     tableBody.appendChild(row);
                 });
             })
@@ -63,16 +67,16 @@
         function updateStatus(index, line, status, approveBtn, rejectBtn) {
             approveBtn.disabled = true;
             rejectBtn.disabled = true;
-            
+
             let newLine = line.trim() + '\t' + status;
-            
+
             fetch(`https://api.github.com/gists/${GIST_ID}?timestamp=${new Date().getTime()}`)
             .then(response => response.json())
             .then(data => {
                 let content = data.files[GIST_FILE_NAME]?.content || "";
                 let lines = content.split('\n');
                 lines[index] = newLine;
-                
+
                 return fetch(`https://api.github.com/gists/${GIST_ID}`, {
                     method: 'PATCH',
                     headers: {
@@ -86,7 +90,7 @@
             })
             .then(() => loadData());
         }
-        
+
         window.onload = loadData;
     </script>
 </head>
@@ -98,6 +102,8 @@
                 <th>姓名</th>
                 <th>開始時間</th>
                 <th>結束時間</th>
+                <th>假別</th>
+                <th>備註</th>
                 <th>狀態</th>
             </tr>
         </thead>
