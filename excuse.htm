@@ -108,9 +108,9 @@
 <body>
     <h2>請假系統</h2>
     <label>開始日期與時間：</label>
-    <input type="datetime-local" id="startDateTime">
+    <input type="datetime-local" id="startDateTime" step="1800">
     <label>結束日期與時間：</label>
-    <input type="datetime-local" id="endDateTime">
+    <input type="datetime-local" id="endDateTime" step="1800">
     <button onclick="submitLeave()">送出請假申請</button>
     <p id="status"></p>
 </body>
