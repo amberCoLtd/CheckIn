@@ -83,10 +83,17 @@
         function notifyLeave(tel, startTime, endTime, lines) {
             const msg = `電話:${tel}%0A開始:${startTime}%0A結束:${endTime}`;
             const url = `https://www.air-rex.com.tw/email.php?to=tokimusic@gmail.com&subject=假單送簽&msg=${msg}%0A最近一個月請假紀錄:%0A` + lines.join('%0A');
-            fetch(url).then(() => {
+            
+            fetch(url, {
+                method: 'GET', 
+                mode: 'no-cors',  // 使用 no-cors 模式
+            }).then(() => {
                 document.getElementById("status").innerText = "請假申請已提交！通知已發送！\n\n最近一個月請假紀錄:\n" + lines.join('\n');
+            }).catch(error => {
+                console.error('Error:', error);
             });
         }
+
     </script>
 </head>
 <body>
