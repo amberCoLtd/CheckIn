@@ -70,7 +70,7 @@
                 let content = data.files[GIST_FILE_NAME]?.content || "";
                 let lines = content.split('\n');
                 if (index >= 0 && index < lines.length) {
-                    lines[index] += `\t${status}`;
+                    lines[index] = lines[index].trim() + `\t${status}`;
                     let updatedContent = lines.join('\n');
                     
                     return fetch(`https://api.github.com/gists/${GIST_ID}`, {
