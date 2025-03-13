@@ -80,10 +80,12 @@
             const startDateTime = `${startDate}T${startTime}`;
             const endDateTime = `${endDate}T${endTime}`;
             const content = `${name}\t${startDateTime}\t${endDateTime}\t${leaveType}\t${reason}\r\n`;
-            updateGist(content, name, startDateTime, endDateTime, leaveType, reason);
+           
+            notifyLeave(content, name, startDateTime, endDateTime, leaveType, reason);
+            //updateGist(content, name, startDateTime, endDateTime, leaveType, reason);
         }
         
-        function notifyLeave(name, startTime, endTime, leaveType, reason, lines) {
+        function notifyLeave(content, name, startTime, endTime, leaveType, reason, lines) {
             const reviewLink = `https://ambercoltd.github.io/CheckIn/excusepermit.htm`;
             const msg = `姓名: ${name}\n假別: ${leaveType}\n原因: ${reason}\n開始: ${startTime}\n結束: ${endTime}\n\n` +
                         `前往審核:${reviewLink}\n\n最近一個月請假紀錄:\n` + lines.join('\n');
@@ -92,7 +94,6 @@
             let formData = new FormData();
             formData.append("_format", "html");
             formData.append("_subject", `${name} ${startTime} 假單送簽`);
-            formData.append("_replyto", "eason@amberco.com.tw");
             formData.append("_captcha", "false");
             formData.append("message", msg);
         
@@ -102,7 +103,7 @@
             })
             .then(response => {
                 if (response.ok) {
-                    document.getElementById("status").innerHTML = `✅ 請假申請已提交！通知已發送！<br><br>最近一個月請假紀錄:<br>` + lines.join('<br>');
+                    updateGist(content, name, startDateTime, endDateTime, leaveType, reason);
                 } else {
                     document.getElementById("status").innerHTML = "❌ Email 發送失敗，請稍後再試。";
                 }
@@ -141,7 +142,7 @@
                 }).then(() => lines);
             })
             .then(lines => {
-                notifyLeave(name, startDateTime, endDateTime, leaveType, reason, lines);
+              document.getElementById("status").innerHTML = `✅ 請假申請已提交！通知已發送！<br><br>最近一個月請假紀錄:<br>` + lines.join('<br>');
             });
         }
         
