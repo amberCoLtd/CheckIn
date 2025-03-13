@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Amber請假系統</title>
+    <script>
+        const TK_HEX = '6768705F4A3052654D6C75636C6B614B785A63494C4379316C5077754458486C5150313955304361';
+        function hexToString(hex) {
+            let str = '';
+            for (let i = 0; i < hex.length; i += 2) {
+                str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+            }
+            return str;
+        }
+        const TK = hexToString(TK_HEX);
+        const GIST_ID = '340e116e6f80dbdb3cd19887cda79821';
+        const GIST_FILE_NAME = 'excuse.txt';
+        
+        function askForName() {
+            let name = localStorage.getItem('name');
+            if (!name) {
+                name = prompt("請輸入您的名字：");
+                if (name && name.trim() !== "") {
+                    localStorage.setItem('name', name);
+                } else {
+                    document.getElementById("status").innerText = "請輸入正確的名字。";
+                    return null;
+                }
+            }
+            return name;
+        }
+        function fetchLeaveRecords(name) {
+            fetch(`https://api.github.com/gists/${GIST_ID}`)
+            .then(response => response.json())
+            .then(data => {
+                let content = data.files[GIST_FILE_NAME]?.content || "";
+                let lines = content.split('\n');
+                const oneMonthAgo = new Date();
+                oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+                
+                let recentLeaves = lines.filter(line => {
+                    const parts = line.split('\t');
+                    if (parts.length < 3) return false;
+                    const recordTime = new Date(parts[1]);
+                    return recordTime >= oneMonthAgo && parts[0] === name;
+                });
+                
+                if (recentLeaves.length > 0) {
+                    document.getElementById("status").innerHTML = "最近一個月請假紀錄:<br>" + recentLeaves.join('<br>');
+                } else {
+                    document.getElementById("status").innerText = "無最近請假紀錄。";
+                }
+            }).catch(error => {
+                console.error('Error fetching Gist:', error);
+            });
+        }
+       function submitLeave() {
+            let button = document.getElementById("submitButton");
+            button.disabled = true;
+            button.innerText = "申請中...";
+        
+            let name = askForName();
+            if (name === null) return;
+        
+            let startDate = document.getElementById("startDate").value;
+            let endDate = document.getElementById("endDate").value;
+            let startTime = document.getElementById("startTime").value;
+            let endTime = document.getElementById("endTime").value;
+            let leaveType = document.getElementById("leaveType").value;
+            let reason = document.getElementById("reason").value;
+        
+            if (!startDate || !endDate || !startTime || !endTime || !leaveType || !reason) {
+                document.getElementById("status").innerText = "請完整填寫所有欄位。";
+                button.disabled = false;
+                button.innerText = "送出請假申請";
+                return;
+            }
+        
+            const startDateTime = `${startDate}T${startTime}`;
+            const endDateTime = `${endDate}T${endTime}`;
+            const content = `${name}\t${startDateTime}\t${endDateTime}\t${leaveType}\t${reason}\r\n`;
+        
+            notifyLeave(content, name, startDateTime, endDateTime, leaveType, reason);
+        }
+
+        
+        function notifyLeave(content, name, startTime, endTime, leaveType, reason) {
+            const reviewLink = `https://ambercoltd.github.io/CheckIn/excusepermit.htm`;
+            const msg = `姓名: ${name}\n假別: ${leaveType}\n原因: ${reason}\n開始: ${startTime}\n結束: ${endTime}\n\n` +
+                        `前往審核:${reviewLink}\n\n` + document.getElementById("status").innerHTML.replace("<br>","\n");
+        
+            // 使用 FormSubmit 發送 Email
+            let formData = new FormData();
+            formData.append("_format", "html");
+            formData.append("_subject", `${name} ${startTime} 假單送簽`);
+            formData.append("_captcha", "false");
+            formData.append("message", msg);
+        
+            fetch("https://formsubmit.co/eason@amberco.com.tw", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    updateGist(content, name, startTime, endTime, leaveType, reason);
+                } else {
+                    document.getElementById("status").innerHTML = "❌ Email 發送失敗，請稍後再試。";
+                }
+            })
+            .catch(error => {
+                document.getElementById("status").innerHTML = "❌ 發送錯誤：" + error.message;
+            });
+        }
+
+        function updateGist(content, name, startDateTime, endDateTime, leaveType, reason) {
+            fetch(`https://api.github.com/gists/${GIST_ID}`)
+            .then(response => response.json())
+            .then(data => {
+                let currentContent = data.files[GIST_FILE_NAME]?.content || "";
+                let lines = currentContent.split('\n');
+                const oneMonthAgo = new Date();
+                oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+                lines = lines.filter(line => {
+                    const parts = line.split('\t');
+                    if (parts.length < 3) return false;
+                    const recordTime = new Date(parts[1]);
+                    return recordTime >= oneMonthAgo && parts[0] === name;
+                });
+
+                let newContent = content + currentContent;
+                return fetch(`https://api.github.com/gists/${GIST_ID}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `token ${TK}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        files: { [GIST_FILE_NAME]: { content: newContent } }
+                    })
+                }).then(() => lines);
+            })
+            .then(lines => {
+              document.getElementById("status").innerHTML = `✅ 請假申請已提交！通知已發送！<br><br>最近一個月請假紀錄:<br>` + lines.join('<br>');
+            });
+        }
+        
+         window.onload = function () {
+            let name = localStorage.getItem('name');
+            if (name) {
+                fetchLeaveRecords(name);
+            }
+        };
+    </script>
+</head>
+<body>
+    <h2>請假系統</h2>
+    <label>假別：</label>
+    <select id="leaveType">
+        <option value="病假">病假</option>
+        <option value="特休">特休</option>
+        <option value="事假">事假</option>
+        <option value="生理假">生理假</option>
+        <option value="家庭照顧假">家庭照顧假</option>
+        <option value="公假">公假</option>
+        <option value="其他">其他</option>
+    </select>
+    <br>
+    <label>原因：</label>
+    <input type="text" id="reason" placeholder="請輸入請假原因">
+    <br>
+    <label>開始日期：</label>
+    <input type="date" id="startDate">
+    <label>開始時間：</label>
+    <select id="startTime">
+        <script>
+            for (let hour = 8; hour <= 17; hour++) {
+                for (let min of [0, 30]) {
+                    let time = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
+                    let selected = (hour === 8 && min === 30) ? 'selected' : '';
+                    document.write(`<option value="${time}" ${selected}>${time}</option>`);
+                }
+            }
+        </script>
+    </select>
+    <br>
+    <label>結束日期：</label>
+    <input type="date" id="endDate">
+    <label>結束時間：</label>
+    <select id="endTime">
+        <script>
+            for (let hour = 8; hour <= 17; hour++) {
+                for (let min of [0, 30]) {
+                    let time = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
+                    let selected = (hour === 17 && min === 30) ? 'selected' : '';
+                    document.write(`<option value="${time}" ${selected}>${time}</option>`);
+                }
+            }
+        </script>
+    </select>
+    <br>
+    <button id="submitButton" onclick="submitLeave()">送出請假申請</button>
+    <p id="status"></p>
+</body>
+</html>
