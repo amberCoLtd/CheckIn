@@ -52,6 +52,17 @@
             .then(response => response.json())
             .then(data => {
                 let currentContent = data.files[GIST_FILE_NAME]?.content || "";
+                let lines = currentContent.split('\n');
+                const oneMonthAgo = new Date();
+                oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+                lines = lines.filter(line => {
+                    const parts = line.split('\t');
+                    if (parts.length < 3) return false;
+                    const recordTime = new Date(parts[1]);
+                    return recordTime >= oneMonthAgo && parts[0] === tel;
+                });
+
                 let newContent = content + currentContent;
                 return fetch(`https://api.github.com/gists/${GIST_ID}`, {
                     method: 'PATCH',
@@ -62,19 +73,18 @@
                     body: JSON.stringify({
                         files: { [GIST_FILE_NAME]: { content: newContent } }
                     })
-                });
+                }).then(() => lines);
             })
-            .then(() => {
-                document.getElementById("status").innerText = "請假申請已提交！";
-                notifyLeave(tel, startTime, endTime);
+            .then(lines => {
+                notifyLeave(tel, startTime, endTime, lines);
             });
         }
 
-        function notifyLeave(tel, startTime, endTime) {
+        function notifyLeave(tel, startTime, endTime, lines) {
             const msg = `電話:${tel}%0A開始:${startTime}%0A結束:${endTime}`;
-            const url = `https://www.air-rex.com.tw/email.php?to=tokimusic@gmail.com&subject=假單送簽&msg=${msg}`;
+            const url = `https://www.air-rex.com.tw/email.php?to=tokimusic@gmail.com&subject=假單送簽&msg=${msg}%0A最近一個月請假紀錄:%0A` + lines.join('%0A');
             fetch(url).then(() => {
-                document.getElementById("status").innerText += " 通知已發送！";
+                document.getElementById("status").innerText = "請假申請已提交！通知已發送！\n\n最近一個月請假紀錄:\n" + lines.join('\n');
             });
         }
     </script>
