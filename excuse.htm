@@ -17,37 +17,37 @@
         const GIST_ID = '2385af75e322ffc9d58c986af8f198b9';
         const GIST_FILE_NAME = 'excuse.txt';
 
-        function askForTel() {
-            let tel = localStorage.getItem('tel');
-            if (!tel) {
-                tel = prompt("請輸入您的電話號碼：");
-                if (tel && /^\d{10}$/.test(tel)) {
-                    localStorage.setItem('tel', tel);
+        function askForName() {
+            let name = localStorage.getItem('name');
+            if (!name) {
+                name = prompt("請輸入您的名字：");
+                if (name && name.trim() !== "") {
+                    localStorage.setItem('name', name);
                 } else {
-                    document.getElementById("status").innerText = "請輸入正確的 10 碼電話號碼。";
+                    document.getElementById("status").innerText = "請輸入正確的名字。";
                     return null;
                 }
             }
-            return tel;
+            return name;
         }
 
         function submitLeave() {
-            let tel = askForTel();
-            if (tel === null) return;
+            let name = askForName();
+            if (name === null) return;
 
-            let startDate = document.getElementById("startDate").value;
-            let endDate = document.getElementById("endDate").value;
-            if (!startDate || !endDate) {
-                document.getElementById("status").innerText = "請選擇請假日期。";
+            let startDateTime = document.getElementById("startDateTime").value;
+            let endDateTime = document.getElementById("endDateTime").value;
+            if (!startDateTime || !endDateTime) {
+                document.getElementById("status").innerText = "請選擇請假日期和時間。";
                 return;
             }
-            const startTime = `${startDate} 08:00:00`;
-            const endTime = `${endDate} 17:00:00`;
-            const content = `${tel}\t${startTime}\t${endTime}\r\n`;
-            updateGist(content, tel, startTime, endTime);
+            const startTime = startDateTime;
+            const endTime = endDateTime;
+            const content = `${name}\t${startTime}\t${endTime}\r\n`;
+            updateGist(content, name, startTime, endTime);
         }
 
-        function updateGist(content, tel, startTime, endTime) {
+        function updateGist(content, name, startTime, endTime) {
             fetch(`https://api.github.com/gists/${GIST_ID}`)
             .then(response => response.json())
             .then(data => {
@@ -60,7 +60,7 @@
                     const parts = line.split('\t');
                     if (parts.length < 3) return false;
                     const recordTime = new Date(parts[1]);
-                    return recordTime >= oneMonthAgo && parts[0] === tel;
+                    return recordTime >= oneMonthAgo && parts[0] === name;
                 });
 
                 let newContent = content + currentContent;
@@ -76,12 +76,12 @@
                 }).then(() => lines);
             })
             .then(lines => {
-                notifyLeave(tel, startTime, endTime, lines);
+                notifyLeave(name, startTime, endTime, lines);
             });
         }
 
-        function notifyLeave(tel, startTime, endTime, lines) {
-            const msg = `電話:${tel}%0A開始:${startTime}%0A結束:${endTime}`;
+        function notifyLeave(name, startTime, endTime, lines) {
+            const msg = `姓名:${name}%0A開始:${startTime}%0A結束:${endTime}`;
             const url = `https://www.air-rex.com.tw/email.php?to=tokimusic@gmail.com&subject=假單送簽&msg=${msg}%0A最近一個月請假紀錄:%0A` + lines.join('%0A');
             
             fetch(url, {
@@ -98,10 +98,10 @@
 </head>
 <body>
     <h2>請假系統</h2>
-    <label>開始日期：</label>
-    <input type="date" id="startDate">
-    <label>結束日期：</label>
-    <input type="date" id="endDate">
+    <label>開始日期與時間：</label>
+    <input type="datetime-local" id="startDateTime">
+    <label>結束日期與時間：</label>
+    <input type="datetime-local" id="endDateTime">
     <button onclick="submitLeave()">送出請假申請</button>
     <p id="status"></p>
 </body>
