@@ -151,7 +151,17 @@
             if (name) {
                 fetchLeaveRecords(name);
             }
+            
+            // 開始日期預設為今天
+            document.getElementById('startDate').valueAsDate = new Date();
+            document.getElementById('endDate').value = document.getElementById('startDate').value;
+        
+            // 開始日期變動時，結束日期跟著自動更新
+            document.getElementById('startDate').addEventListener('change', function(){
+                document.getElementById('endDate').value = this.value;
+            });
         };
+
     </script>
 </head>
 <body>
@@ -181,7 +191,7 @@
     </select>
     <br>
     <label>結束日期：</label>
-    <input type="date" id="endDate">
+    <input type="date" id="endDate" readonly>
     <label>結束時間：</label>
     <select id="endTime">
         <script>
