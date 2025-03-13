@@ -31,16 +31,25 @@
             return name;
         }
 
+        function validateTime(inputTime) {
+            const time = inputTime.split('T')[1];  // 取得時間部分 (HH:MM)
+            const minutes = parseInt(time.split(':')[1]);
+            return minutes === 0 || minutes === 30;  // 只允許 00 分或 30 分
+        }
+
         function submitLeave() {
             let name = askForName();
             if (name === null) return;
 
             let startDateTime = document.getElementById("startDateTime").value;
             let endDateTime = document.getElementById("endDateTime").value;
-            if (!startDateTime || !endDateTime) {
-                document.getElementById("status").innerText = "請選擇請假日期和時間。";
+
+            // 檢查時間是否為 00 分或 30 分
+            if (!startDateTime || !endDateTime || !validateTime(startDateTime) || !validateTime(endDateTime)) {
+                document.getElementById("status").innerText = "請選擇正確的請假日期和時間（每半小時的整點或半點）。";
                 return;
             }
+            
             const startTime = startDateTime;
             const endTime = endDateTime;
             const content = `${name}\t${startTime}\t${endTime}\r\n`;
