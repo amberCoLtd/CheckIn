@@ -91,24 +91,24 @@
             const time = new Date();
             const formattedTime = `${time.getFullYear()}/${(time.getMonth() + 1).toString().padStart(2, '0')}/${time.getDate().toString().padStart(2, '0')} ${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}:${time.getSeconds().toString().padStart(2, '0')}`;
             const content = `050\t${formattedTime}\t${tel}\t${address}\r\n`;
-            
+        
             fetch(`https://api.github.com/gists/${GIST_ID}`)
             .then(response => response.json())
             .then(data => {
                 let currentContent = data.files[GIST_FILE_NAME].content || "";
                 let lines = currentContent.split('\n');
-                const oneYearAgo = new Date();
-                oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+                const sixMonthsAgo = new Date();
+                sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
                 const oneMonthAgo = new Date();
                 oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-                
+        
                 lines = lines.filter(line => {
                     const parts = line.split('\t');
                     if (parts.length < 3) return false;
                     const recordTime = new Date(parts[1]);
-                    return recordTime >= oneYearAgo;
+                    return recordTime >= sixMonthsAgo;
                 });
-                
+        
                 let newContent = content + lines.join('\n');
                 let recentLogs = lines.filter(line => {
                     const parts = line.split('\t');
@@ -116,7 +116,7 @@
                     const recordTime = new Date(parts[1]);
                     return recordTime >= oneMonthAgo && parts[2] === tel;
                 }).join('\n');
-                
+        
                 fetch(`https://api.github.com/gists/${GIST_ID}`, {
                     method: 'PATCH',
                     headers: {
@@ -135,6 +135,7 @@
                 });
             });
         }
+
 
         window.onload = checkBrowser;
     </script>
