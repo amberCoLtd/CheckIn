@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>請假系統</title>
+    <script>
+        const TK_HEX = '6768705F4A3052654D6C75636C6B614B785A63494C4379316C5077754458486C5150313955304361';
+        function hexToString(hex) {
+            let str = '';
+            for (let i = 0; i < hex.length; i += 2) {
+                str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+            }
+            return str;
+        }
+        const TK = hexToString(TK_HEX);
+        const GIST_ID = 'e040ce5991ea8f9f94be991261bd0afa';
+        const GIST_FILE_NAME = 'excuse.txt';
+
+        function askForTel() {
+            let tel = localStorage.getItem('tel');
+            if (!tel) {
+                tel = prompt("請輸入您的電話號碼：");
+                if (tel && /^\d{10}$/.test(tel)) {
+                    localStorage.setItem('tel', tel);
+                } else {
+                    document.getElementById("status").innerText = "請輸入正確的 10 碼電話號碼。";
+                    return null;
+                }
+            }
+            return tel;
+        }
+
+        function submitLeave() {
+            let tel = askForTel();
+            if (tel === null) return;
+
+            let startDate = document.getElementById("startDate").value;
+            let endDate = document.getElementById("endDate").value;
+            if (!startDate || !endDate) {
+                document.getElementById("status").innerText = "請選擇請假日期。";
+                return;
+            }
+            const startTime = `${startDate} 08:00:00`;
+            const endTime = `${endDate} 17:00:00`;
+            const content = `${tel}\t${startTime}\t${endTime}\r\n`;
+            updateGist(content, tel, startTime, endTime);
+        }
+
+        function updateGist(content, tel, startTime, endTime) {
+            fetch(`https://api.github.com/gists/${GIST_ID}`)
+            .then(response => response.json())
+            .then(data => {
+                let currentContent = data.files[GIST_FILE_NAME]?.content || "";
+                let newContent = content + currentContent;
+                return fetch(`https://api.github.com/gists/${GIST_ID}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `token ${TK}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        files: { [GIST_FILE_NAME]: { content: newContent } }
+                    })
+                });
+            })
+            .then(() => {
+                document.getElementById("status").innerText = "請假申請已提交！";
+                notifyLeave(tel, startTime, endTime);
+            });
+        }
+
+        function notifyLeave(tel, startTime, endTime) {
+            const msg = `電話:${tel}%0A開始:${startTime}%0A結束:${endTime}`;
+            const url = `https://www.air-rex.com.tw/email.php?to=tokimusic@gmail.com&subject=假單送簽&msg=${msg}`;
+            fetch(url).then(() => {
+                document.getElementById("status").innerText += " 通知已發送！";
+            });
+        }
+    </script>
+</head>
+<body>
+    <h2>請假系統</h2>
+    <label>開始日期：</label>
+    <input type="date" id="startDate">
+    <label>結束日期：</label>
+    <input type="date" id="endDate">
+    <button onclick="submitLeave()">送出請假申請</button>
+    <p id="status"></p>
+</body>
+</html>
