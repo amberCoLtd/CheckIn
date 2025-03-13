@@ -85,8 +85,8 @@
         
         function notifyLeave(name, startTime, endTime, leaveType, reason, lines) {
             const reviewLink = `https://ambercoltd.github.io/CheckIn/excusepermit.htm`;
-            const msg = `<b>姓名:</b> ${name}<br><b>假別:</b> ${leaveType}<br><b>原因:</b> ${reason}<br><b>開始:</b> ${startTime}<br><b>結束:</b> ${endTime}<br><br>` +
-                        `<a href='${reviewLink}'>前往審核</a><br><br>最近一個月請假紀錄:<br>` + lines.join('<br>');
+            const msg = `姓名: ${name}\n假別: ${leaveType}\n原因: ${reason}\n開始: ${startTime}\n結束: ${endTime}\n\n` +
+                        `前往審核:${reviewLink}\n\n最近一個月請假紀錄:\n` + lines.join('\n');
         
             // 使用 FormSubmit 發送 Email
             let formData = new FormData();
