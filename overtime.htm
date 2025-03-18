@@ -204,7 +204,7 @@
     <label>結束時間：</label>
     <select id="endTime">
         <script>
-            for (let hour = 17; hour <= 24; hour++) {
+            for (let hour = 17; hour <= 30; hour++) {
                 for (let min of [0, 30]) {
                     let time = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
                     let selected = (hour === 24 && min === 0) ? 'selected' : '';
