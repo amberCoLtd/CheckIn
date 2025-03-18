@@ -91,7 +91,7 @@
             const newContent = `050\t${formattedTime}\t${tel}\t${address}\r\n`;
         
             try {
-                let res = await fetch(`https://api.github.com/gists/${GIST_ID}`);
+                let res = await fetch(`https://api.github.com/gists/${GIST_ID}?timestamp=${Date.now()}`);
                 let gistData = await res.json();
         
                 let existingContent = gistData.files[GIST_FILE_NAME]?.content || '';
