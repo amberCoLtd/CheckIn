@@ -119,11 +119,11 @@
                 await fetch(`https://api.github.com/gists/${GIST_ID}`, {
                     method: 'PATCH',
                     headers: { 'Authorization': `token ${TK}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ files: { [GIST_FILE_NAME]: { content: updatedLines.join('\n') } } })
+                    body: JSON.stringify({ files: { [GIST_FILE_NAME]: { content: updatedLines.join('\r\n') } } })
                 });
         
                 document.getElementById("status").innerText = "打卡成功！";
-                document.getElementById("logRecords").innerText = newContent + recentRecords.join('\n'); // 只顯示最近 1 個月的記錄
+                document.getElementById("logRecords").innerText = newContent + recentRecords.join('\r\n'); // 只顯示最近 1 個月的記錄
             } catch (error) {
                 alert("打卡失敗：" + error);
             }
