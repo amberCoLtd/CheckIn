@@ -119,17 +119,26 @@
             .then(data => {
                 let currentContent = data.files[GIST_FILE_NAME]?.content || "";
                 let lines = currentContent.split('\n');
+                const sixMonthsAgo = new Date();
+                sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
                 const oneMonthAgo = new Date();
                 oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
-                lines = lines.filter(line => {
+                let sixMonthRecords = lines.filter(line => {
+                    const parts = line.split('\t');
+                    if (parts.length < 3) return false;
+                    const recordTime = new Date(parts[1]);
+                    return recordTime >= sixMonthsAgo;
+                });
+                
+                let oneMonthRecords = sixMonthRecords.filter(line => {
                     const parts = line.split('\t');
                     if (parts.length < 3) return false;
                     const recordTime = new Date(parts[1]);
                     return recordTime >= oneMonthAgo && parts[0] === name;
                 });
 
-                let newContent = content + currentContent;
+                let newContent = content + sixMonthRecords.join('\n');
                 return fetch(`https://api.github.com/gists/${GIST_ID}`, {
                     method: 'PATCH',
                     headers: {
@@ -139,10 +148,10 @@
                     body: JSON.stringify({
                         files: { [GIST_FILE_NAME]: { content: newContent } }
                     })
-                }).then(() => lines);
+                }).then(() => oneMonthRecords);
             })
-            .then(lines => {
-              document.getElementById("status").innerHTML = `✅ 加班申請已提交！通知已發送！<br><br>最近一個月加班紀錄:<br>` + lines.join('<br>');
+            .then(oneMonthRecords => {
+              document.getElementById("status").innerHTML = `✅ 加班申請已提交！通知已發送！<br><br>最近一個月加班紀錄:<br>` + content + oneMonthRecords.join('<br>');
             });
         }
         
