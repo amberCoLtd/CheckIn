@@ -97,7 +97,7 @@
             formData.append("_captcha", "false");
             formData.append("message", msg);
         
-            fetch("https://formsubmit.co/tokimusic@gmail.com", {
+            fetch("https://formsubmit.co/eason@amberco.com.tw", {
                 method: "POST",
                 body: formData
             })
@@ -142,7 +142,7 @@
                 }).then(() => lines);
             })
             .then(lines => {
-              document.getElementById("status").innerHTML = `✅ 請假申請已提交！通知已發送！<br><br>最近一個月請假紀錄:<br>` + lines.join('<br>');
+              document.getElementById("status").innerHTML = `✅ 請假申請已提交！請自行與主管確認是否核准！<br><br>最近一個月請假紀錄:<br>` + lines.join('<br>');
             });
         }
         
