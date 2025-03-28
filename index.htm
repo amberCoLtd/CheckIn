@@ -9,7 +9,30 @@
         const GIST_ID = '7c94f03f1def80b2e4236a199f257c63';
         const GIST_FILE_NAME = 'checkin.txt';
         const TK = hexToString(TK_HEX);
+		const ALLOWED_LOCATIONS = [
+			{ name: "台北公司", lat: 24.986794380363925, lon: 121.5336918999006 },
+			{ name: "豐原", lat: 24.242773932507596, lon: 120.72087978039121 },
+			{ name: "后里", lat: 24.308429969633366, lon: 120.73576330622616 },
+		];
+		// 計算兩點間距離（Haversine）
+		function distance(lat1, lon1, lat2, lon2) {
+			const R = 6371; // 地球半徑 (km)
+			const dLat = (lat2 - lat1) * Math.PI / 180;
+			const dLon = (lon2 - lon1) * Math.PI / 180;
+			const a = Math.sin(dLat/2)**2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2)**2;
+			const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+			return R * c; // 公里
+		}
 
+		function isWithinAllowedArea(lat, lon) {
+		  for (const loc of ALLOWED_LOCATIONS) {
+			const d = distance(lat, lon, loc.lat, loc.lon);
+			if (d <= 2.0) return loc.name + " " + d.toFixed(2) + " KM";
+
+		  }
+		  return "未知場所";
+		  return null; // ❌ 不在範圍內
+		}
         function hexToString(hex) {
             let str = '';
             for (let i = 0; i < hex.length; i += 2)
@@ -39,13 +62,13 @@
                 const { latitude: lat, longitude: lon } = position.coords;
                 localStorage.setItem('latitude', lat);
                 localStorage.setItem('longitude', lon);
-
+				const where = isWithinAllowedArea(lat, lon);
                 try {
                     let res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
                     let data = await res.json();
                     let address = data.display_name || "無法取得地址";
-                    localStorage.setItem('address', address);
-                    document.getElementById("locationStatus").innerText = "地址已取得：" + address;
+                    localStorage.setItem('address',where+"。"+address);
+                    document.getElementById("locationStatus").innerText = "地址已取得："+ where + "。"+ address;
                     await sendLocation();
                 } catch (e) {
                     document.getElementById("locationStatus").innerText = "地址取得失敗，請稍後重試。";
@@ -70,6 +93,7 @@
         }
 
         async function sendLocation() {
+		
             const tel = askForTel();
             if (!tel) return;
 
