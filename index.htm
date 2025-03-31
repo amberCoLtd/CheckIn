@@ -97,11 +97,9 @@
             const tel = askForTel();
             if (!tel) return;
 
-            const lat = localStorage.getItem('latitude');
-            const lon = localStorage.getItem('longitude');
             const address = localStorage.getItem('address');
 
-            if (!lat || !lon || !address) {
+            if (!address) {
                 alert("尚未獲取位置資訊，請稍候再試。");
                 return;
             }
