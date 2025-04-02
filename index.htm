@@ -30,7 +30,6 @@
 			if (d <= 2.0) return loc.name + " " + d.toFixed(2) + " KM";
 
 		  }
-		  return "未知場所";
 		  return null; // ❌ 不在範圍內
 		}
         function hexToString(hex) {
@@ -59,23 +58,30 @@
             }
 
             navigator.geolocation.getCurrentPosition(async position => {
-                const { latitude: lat, longitude: lon } = position.coords;
-                localStorage.setItem('latitude', lat);
-                localStorage.setItem('longitude', lon);
-				const where = isWithinAllowedArea(lat, lon);
-                try {
-                    let res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
-                    let data = await res.json();
-                    let address = data.display_name || "無法取得地址";
-                    localStorage.setItem('address',where+"。"+address);
-                    document.getElementById("locationStatus").innerText = "地址已取得："+ where + "。"+ address;
-                    await sendLocation();
-                } catch (e) {
-                    document.getElementById("locationStatus").innerText = "地址取得失敗，請稍後重試。";
-                }
-            }, error => {
-                document.getElementById("locationStatus").innerText = "無法獲取位置：" + error.message;
-            });
+		    const { latitude: lat, longitude: lon } = position.coords;
+		    localStorage.setItem('latitude', lat);
+		    localStorage.setItem('longitude', lon);
+		
+		    let where = isWithinAllowedArea(lat, lon);
+		
+		    if (where == null) {
+		        try {
+		            let res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+		            let data = await res.json();
+		            where = data.display_name || "無法取得地址";
+		        } catch (e) {
+		            where = "地址取得失敗，請稍後重試。";
+		        }
+		    }
+		
+		    localStorage.setItem('address', where);
+		    document.getElementById("locationStatus").innerText = where;
+		
+		    await sendLocation();
+		}, error => {
+		    document.getElementById("locationStatus").innerText = "無法獲取位置：" + error.message;
+		});
+
         }
 
         function askForTel() {
