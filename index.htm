@@ -9,29 +9,40 @@
         const GIST_ID = '7c94f03f1def80b2e4236a199f257c63';
         const GIST_FILE_NAME = 'checkin.txt';
         const TK = hexToString(TK_HEX);
-		const ALLOWED_LOCATIONS = [
-			{ name: "台北公司", lat: 24.986794380363925, lon: 121.5336918999006 },
-			{ name: "台中辦公室", lat: 24.310777911896015, lon: 120.72138183688088 },
-			{ name: "后里美光", lat: 24.318140260826873, lon: 120.72406839843525 },
-		];
-		// 計算兩點間距離（Haversine）
-		function distance(lat1, lon1, lat2, lon2) {
-			const R = 6371; // 地球半徑 (km)
-			const dLat = (lat2 - lat1) * Math.PI / 180;
-			const dLon = (lon2 - lon1) * Math.PI / 180;
-			const a = Math.sin(dLat/2)**2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2)**2;
-			const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-			return R * c; // 公里
-		}
+	const ALLOWED_LOCATIONS = [
+	  { name: "台北公司", lat: 24.986794380363925, lon: 121.5336918999006, radiusM: 200 },
+	  { name: "台中辦公室", lat: 24.310777911896015, lon: 120.72138183688088, radiusM: 2000 },
+	  { name: "后里美光", lat: 24.318140260826873, lon: 120.72406839843525, radiusM: 2000 },
+	];
+	
+	// 計算兩點間距離（Haversine 公式，回傳公尺）
+	function distance(lat1, lon1, lat2, lon2) {
+	  const R = 6371e3; // 地球半徑 (公尺)
+	  const toRad = deg => deg * Math.PI / 180;
+	
+	  const dLat = toRad(lat2 - lat1);
+	  const dLon = toRad(lon2 - lon1);
+	  const lat1Rad = toRad(lat1);
+	  const lat2Rad = toRad(lat2);
+	
+	  const a = Math.sin(dLat / 2) ** 2 +
+	            Math.cos(lat1Rad) * Math.cos(lat2Rad) *
+	            Math.sin(dLon / 2) ** 2;
+	  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+	  return R * c; // 公尺
+	}
+	
+	// 判斷是否在允許地點的允許距離內
+	function isWithinAllowedArea(lat, lon) {
+	  for (const loc of ALLOWED_LOCATIONS) {
+	    const d = distance(lat, lon, loc.lat, loc.lon);
+	    if (d <= loc.radiusM) {
+	      return `${loc.name} ${Math.round(d)} 公尺`;
+	    }
+	  }
+	  return null; // ❌ 不在任何允許地點範圍內
+	}
 
-		function isWithinAllowedArea(lat, lon) {
-		  for (const loc of ALLOWED_LOCATIONS) {
-			const d = distance(lat, lon, loc.lat, loc.lon);
-			if (d <= 2.0) return loc.name + " " + d.toFixed(2) + " KM";
-
-		  }
-		  return null; // ❌ 不在範圍內
-		}
         function hexToString(hex) {
             let str = '';
             for (let i = 0; i < hex.length; i += 2)
