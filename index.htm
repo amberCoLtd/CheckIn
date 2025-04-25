@@ -50,17 +50,22 @@
             return str;
         }
 
-        function isLineBrowser() {
-            return /Line/i.test(navigator.userAgent);
-        }
-
-        function checkBrowser() {
-            if (!isLineBrowser()) {
-                window.location.href = "https://www.google.com";
-            } else {
-                fetchLocation();
-            }
-        }
+	function checkBrowser() {
+	    if (/Line/i.test(navigator.userAgent) && /Android/i.test(navigator.userAgent)) {
+	        // 顯示提示畫面
+	        document.body.innerHTML = `
+	          <div style="text-align:center; padding:40px; font-size:18px;">
+	            <p>📍本打卡系統需使用 GPS<br>請點擊下方按鈕，改用手機瀏覽器開啟</p>
+	            <a href="${location.href}" target="_blank"
+	               style="display:inline-block; margin-top:20px; padding:12px 24px; background:#007AFF; color:white; text-decoration:none; border-radius:8px;">
+	              👉 在瀏覽器中開啟
+	            </a>
+	          </div>
+	        `;
+	        return;
+	    }
+	    fetchLocation(); // 其他情況正常執行
+	}
 
         function fetchLocation() {
             if (!navigator.geolocation) {
