@@ -58,24 +58,18 @@
 	    return /Android/i.test(navigator.userAgent);
 	}
 	
-	function isIOS() {
-	    return /iPhone/i.test(navigator.userAgent);
-	}
-	
 	function openExternalBrowserAndroid(url) {
 	    // 嘗試透過 Intent 開啟外部瀏覽器（Chrome 為例）
 	    location.href = `intent://${url.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;end`;
 	}
 	
 	function checkEntry() {
-	    if (!isLine()) {
+	    if (!isLine() && !isAndroid()) {
 	        document.body.innerHTML = "<p style='color:red;'>請由 LINE 開啟本頁面</p>";
 	        return;
 	    }
 	
-	    if (isIOS()) {
-	        fetchLocation(); // 你的定位流程
-	    } else if (isAndroid()) {
+	    if (isAndroid() && isLine()) {
 		 document.body.innerHTML = `
 	          <div style="text-align:center; padding:40px; font-size:18px;">
 	            <p>📍本打卡系統需使用 GPS<br>請點擊下方按鈕，改用手機瀏覽器開啟</p>
@@ -85,8 +79,8 @@
 	            </a>
 	          </div>
 	        `;
-	    } else {
-	        document.body.innerHTML = "<p style='color:red;'>不支援的裝置</p>";
+	    }else{
+	        fetchLocation(); // 你的定位流程
 	    }
 	}
 
