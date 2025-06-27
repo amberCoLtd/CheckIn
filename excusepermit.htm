@@ -94,7 +94,7 @@
         function notifyLeave(line, status) {
             let cols = line.split('\t');
             const email = new URLSearchParams(window.location.search).get("email");
-            const msg = `${email} ${status} ${line}`;
+            const msg = `${email} ${status} ${line}\n\n詳情:https://ambercoltd.github.io/CheckIn/excusepermit.htm`;
         
             // 使用 FormSubmit 發送 Email
             let formData = new FormData();
