@@ -26,7 +26,7 @@
 				let tableBody = document.getElementById("records");
 				tableBody.innerHTML = "";
 
-				const email = new URLSearchParams(window.location.search).get("email");
+				const email = new URLSearchParams(window.location.search).get("email").trim();
 
 				lines.forEach((line, index) => {
 					if (!line.trim()) return;
@@ -39,7 +39,7 @@
 						row.appendChild(cell);
 					});
 
-					if ( (cols.length < 7 || !cols[6]?.trim()) && email.trim() === cols[5].trim()) {
+					if ( (cols.length < 7 || !cols[6]?.trim()) && email === cols[5].trim()) {
 						let approveBtn = document.createElement("button");
 						approveBtn.textContent = "核准";
 						approveBtn.onclick = () => updateStatus(index, line, "核准", approveBtn, rejectBtn);
