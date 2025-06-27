@@ -26,8 +26,7 @@
 				let tableBody = document.getElementById("records");
 				tableBody.innerHTML = "";
 
-				// 🔽 取得網址參數（去掉問號）
-				const urlParam = decodeURIComponent(window.location.search.substring(1));
+				const email = new URLSearchParams(window.location.search).get("email");
 
 				lines.forEach((line, index) => {
 					if (!line.trim()) return;
@@ -40,7 +39,7 @@
 						row.appendChild(cell);
 					});
 
-					if ( (cols.length < 7 || !cols[6]?.trim()) && urlParam.trim() === cols[5].trim()) {
+					if ( (cols.length < 7 || !cols[6]?.trim()) && email.trim() === cols[5].trim()) {
 						let approveBtn = document.createElement("button");
 						approveBtn.textContent = "核准";
 						approveBtn.onclick = () => updateStatus(index, line, "核准", approveBtn, rejectBtn);
