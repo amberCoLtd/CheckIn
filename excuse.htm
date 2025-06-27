@@ -69,6 +69,7 @@
             let endTime = document.getElementById("endTime").value;
             let leaveType = document.getElementById("leaveType").value;
             let reason = document.getElementById("reason").value;
+			let master = document.getElementById("master").value;
         
             if (!startDate || !endDate || !startTime || !endTime || !leaveType || !reason) {
                 document.getElementById("status").innerText = "請完整填寫所有欄位。";
@@ -79,13 +80,13 @@
         
             const startDateTime = `${startDate}T${startTime}`;
             const endDateTime = `${endDate}T${endTime}`;
-            const content = `${name}\t${startDateTime}\t${endDateTime}\t${leaveType}\t${reason}\r\n`;
+            const content = `${name}\t${startDateTime}\t${endDateTime}\t${leaveType}\t${reason}\t${master}\r\n`;
         
-            notifyLeave(content, name, startDateTime, endDateTime, leaveType, reason);
+            notifyLeave(content, name, startDateTime, endDateTime, leaveType, master, reason);
         }
 
         
-        function notifyLeave(content, name, startTime, endTime, leaveType, reason) {
+        function notifyLeave(content, name, startTime, endTime, leaveType, master, reason) {
             const reviewLink = `https://ambercoltd.github.io/CheckIn/excusepermit.htm`;
             const msg = `姓名: ${name}\n假別: ${leaveType}\n原因: ${reason}\n開始: ${startTime}\n結束: ${endTime}\n\n` +
                         `前往審核:${reviewLink}\n\n` + document.getElementById("status").innerHTML.replace(/<br\s*\/?>/gi, "\n");
@@ -96,8 +97,8 @@
             formData.append("_subject", `${name} ${startTime} 假單送簽`);
             formData.append("_captcha", "false");
             formData.append("message", msg);
-        
-            fetch("https://formsubmit.co/eason@amberco.com.tw", {
+			#eason@amberco.com.tw
+            fetch(`https://formsubmit.co/${master}`, {
                 method: "POST",
                 body: formData
             })
@@ -156,6 +157,12 @@
 </head>
 <body>
     <h2>請假系統</h2>
+    <label>主管：</label>
+    <select id="master">
+        <option value="tokimusic@gmail.com">A</option>
+        <option value="toki.music@gmail.com">B</option>
+        <option value="lizard@air-rex.com.tw">C</option>
+    </select>
     <label>假別：</label>
     <select id="leaveType">
         <option value="病假">病假</option>
