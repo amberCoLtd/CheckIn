@@ -40,9 +40,7 @@
 						row.appendChild(cell);
 					});
 
-					// 🔽 如果 cols 不足 7 欄 或 col[6] 為空，才考慮顯示按鈕
-					// 🔽 且網址參數需等於 cols[5]
-					if (cols.length >= 7 && !cols[6]?.trim() && urlParam === cols[5]) {
+					if ( (cols.length < 7 || !cols[6]?.trim()) && urlParam.trim() === cols[5].trim()) {
 						let approveBtn = document.createElement("button");
 						approveBtn.textContent = "核准";
 						approveBtn.onclick = () => updateStatus(index, line, "核准", approveBtn, rejectBtn);
