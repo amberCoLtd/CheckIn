@@ -17,48 +17,53 @@
         const GIST_ID = '340e116e6f80dbdb3cd19887cda79821';
         const GIST_FILE_NAME = 'excuse.txt';
 
-        function loadData() {
-            fetch(`https://api.github.com/gists/${GIST_ID}?timestamp=${new Date().getTime()}`)
-            .then(response => response.json())
-            .then(data => {
-                let content = data.files[GIST_FILE_NAME]?.content || "";
-                let lines = content.split('\n');
-                let tableBody = document.getElementById("records");
-                tableBody.innerHTML = "";
+		function loadData() {
+			fetch(`https://api.github.com/gists/${GIST_ID}?timestamp=${new Date().getTime()}`)
+			.then(response => response.json())
+			.then(data => {
+				let content = data.files[GIST_FILE_NAME]?.content || "";
+				let lines = content.split('\n');
+				let tableBody = document.getElementById("records");
+				tableBody.innerHTML = "";
 
-                lines.forEach((line, index) => {
-                    if (!line.trim()) return;
-                    let cols = line.split('\t');
-                    let row = document.createElement("tr");
+				// 🔽 取得網址參數（去掉問號）
+				const urlParam = decodeURIComponent(window.location.search.substring(1));
 
-                    cols.forEach(col => {
-                        let cell = document.createElement("td");
-                        cell.textContent = col;
-                        row.appendChild(cell);
-                    });
+				lines.forEach((line, index) => {
+					if (!line.trim()) return;
+					let cols = line.split('\t');
+					let row = document.createElement("tr");
 
-                    if (cols.length < 7 || !cols[6]?.trim()) {
-                        let approveBtn = document.createElement("button");
-                        approveBtn.textContent = "核准";
-                        approveBtn.onclick = () => updateStatus(index, line, "核准", approveBtn, rejectBtn);
+					cols.forEach(col => {
+						let cell = document.createElement("td");
+						cell.textContent = col;
+						row.appendChild(cell);
+					});
 
-                        let rejectBtn = document.createElement("button");
-                        rejectBtn.textContent = "拒絕";
-                        rejectBtn.onclick = () => updateStatus(index, line, "拒絕", approveBtn, rejectBtn);
+					// 🔽 如果 cols 不足 7 欄 或 col[6] 為空，才考慮顯示按鈕
+					// 🔽 且網址參數需等於 cols[5]
+					if (cols.length >= 7 && !cols[6]?.trim() && urlParam === cols[5]) {
+						let approveBtn = document.createElement("button");
+						approveBtn.textContent = "核准";
+						approveBtn.onclick = () => updateStatus(index, line, "核准", approveBtn, rejectBtn);
 
-                        let actionCell = document.createElement("td");
-                        actionCell.appendChild(approveBtn);
-                        actionCell.appendChild(document.createElement("br"));
-                        actionCell.appendChild(document.createElement("br"));
-                        actionCell.appendChild(rejectBtn);
-                        row.appendChild(actionCell);
-                    }
+						let rejectBtn = document.createElement("button");
+						rejectBtn.textContent = "拒絕";
+						rejectBtn.onclick = () => updateStatus(index, line, "拒絕", approveBtn, rejectBtn);
 
-                    tableBody.appendChild(row);
-                });
-            })
-            .catch(error => console.error('Error loading data:', error));
-        }
+						let actionCell = document.createElement("td");
+						actionCell.appendChild(approveBtn);
+						actionCell.appendChild(document.createElement("br"));
+						actionCell.appendChild(document.createElement("br"));
+						actionCell.appendChild(rejectBtn);
+						row.appendChild(actionCell);
+					}
+
+					tableBody.appendChild(row);
+				});
+			})
+			.catch(error => console.error('Error loading data:', error));
+		}
 
         function updateStatus(index, line, status, approveBtn, rejectBtn) {
             approveBtn.disabled = true;
