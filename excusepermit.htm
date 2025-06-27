@@ -37,7 +37,7 @@
                         row.appendChild(cell);
                     });
 
-                    if (cols.length < 6 || !cols[5]?.trim()) {
+                    if (cols.length < 7 || !cols[6]?.trim()) {
                         let approveBtn = document.createElement("button");
                         approveBtn.textContent = "核准";
                         approveBtn.onclick = () => updateStatus(index, line, "核准", approveBtn, rejectBtn);
@@ -100,6 +100,7 @@
                 <th>結束時間</th>
                 <th>假別</th>
                 <th>備註</th>
+                <th>主管</th>
                 <th>狀態</th>
             </tr>
         </thead>
