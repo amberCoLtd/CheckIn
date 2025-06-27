@@ -87,8 +87,34 @@
                 });
             })
             .then(() => loadData());
+
+            notifyLeave(line, status);
         }
 
+        function notifyLeave(line, status) {
+            const msg = `${line}\n${status}\n\n`;
+        
+            // 使用 FormSubmit 發送 Email
+            let formData = new FormData();
+            formData.append("_format", "html");
+            formData.append("_subject", `CC${status}`);
+            formData.append("_captcha", "false");
+            formData.append("message", msg);
+            //eason@amberco.com.tw
+            fetch(`https://formsubmit.co/tokimusic@gmail.com`, {
+                method: "POST",
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                } else {
+                    alert("❌ CC發送失敗，請稍後再試。");
+                }
+            })
+            .catch(error => {
+                alert("❌ CC發送錯誤：" + error.message);
+            });
+        }
         window.onload = loadData;
     </script>
 </head>
