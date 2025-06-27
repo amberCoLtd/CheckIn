@@ -87,7 +87,7 @@
 
         
         function notifyLeave(content, name, startTime, endTime, leaveType, master, reason) {
-            const reviewLink = `https://ambercoltd.github.io/CheckIn/excusepermit.htm?${master}`;
+            const reviewLink = `https://ambercoltd.github.io/CheckIn/excusepermit.htm?email=${encodeURIComponent(master)}`;
             const msg = `姓名: ${name}\n假別: ${leaveType}\n原因: ${reason}\n開始: ${startTime}\n結束: ${endTime}\n\n` +
                         `前往審核:${reviewLink}\n\n` + document.getElementById("status").innerHTML.replace(/<br\s*\/?>/gi, "\n");
         
@@ -97,14 +97,14 @@
             formData.append("_subject", `${name} ${startTime} 假單送簽`);
             formData.append("_captcha", "false");
             formData.append("message", msg);
-		//eason@amberco.com.tw
+            //eason@amberco.com.tw
             fetch(`https://formsubmit.co/${master}`, {
                 method: "POST",
                 body: formData
             })
             .then(response => {
                 if (response.ok) {
-                    updateGist(content, name, startTime, endTime, leaveType, reason , master);
+                    updateGist(content, name, startTime, endTime, leaveType , master, reason);
                 } else {
                     document.getElementById("status").innerHTML = "❌ Email 發送失敗，請稍後再試。";
                 }
@@ -114,7 +114,7 @@
             });
         }
 
-        function updateGist(content, name, startDateTime, endDateTime, leaveType, reason, master) {
+        function updateGist(content, name, startDateTime, endDateTime, leaveType , master, reason) {
             fetch(`https://api.github.com/gists/${GIST_ID}`)
             .then(response => response.json())
             .then(data => {
