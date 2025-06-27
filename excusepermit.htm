@@ -26,8 +26,8 @@
 				let tableBody = document.getElementById("records");
 				tableBody.innerHTML = "";
 
-				const email = new URLSearchParams(window.location.search).get("email").trim();
-
+				const email = new URLSearchParams(window.location.search).get("email");
+				
 				lines.forEach((line, index) => {
 					if (!line.trim()) return;
 					let cols = line.split('\t');
