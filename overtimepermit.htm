@@ -36,8 +36,9 @@
                         cell.textContent = col;
                         row.appendChild(cell);
                     });
+    				const email = new URLSearchParams(window.location.search).get("master");
 
-                    if (cols.length < 6 || !cols[5]?.trim()) {
+                    if ( (cols.length < 7 || !cols[6]?.trim() ) && email === cols[5].trim()) {
                         let approveBtn = document.createElement("button");
                         approveBtn.textContent = "核准";
                         approveBtn.onclick = () => updateStatus(index, line, "核准", approveBtn, rejectBtn);
@@ -108,3 +109,4 @@
     </table>
 </body>
 </html>
+
