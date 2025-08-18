@@ -100,8 +100,6 @@
             formData.append("_captcha", "false");
             formData.append("message", msg);
 
-
-            
             fetch(`https://formsubmit.co/${master}`, {
                 method: "POST",
                 body: formData
@@ -213,7 +211,7 @@
     </select>
     <br>
     <label>結束日期：</label>
-    <input type="date" id="endDate" disabled>
+    <input type="date" id="endDate">
     <label>結束時間：</label>
     <select id="endTime">
         <script>
@@ -231,6 +229,7 @@
     <p id="status" style="white-space: nowrap; overflow-x: scroll; display: block; width: 100%;"></p>
 </body>
 </html>
+
 
 
 
