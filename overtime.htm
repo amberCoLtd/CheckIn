@@ -88,7 +88,6 @@
         
         function notifyLeave(content, name, startTime, endTime, leaveType, reason) {
             let master = document.getElementById("master").value;
-            alert(master);
             const reviewLink = `https://ambercoltd.github.io/CheckIn/overtimepermit.htm?email=${master}`;
             const msg = `姓名: ${name}\n加班: ${leaveType}\n原因: ${reason}\n開始: ${startTime}\n結束: ${endTime}\n\n` +
                         `前往審核:${reviewLink}\n\n` + document.getElementById("status").innerHTML.replace("<br>","\n");
@@ -229,6 +228,7 @@
     <p id="status" style="white-space: nowrap; overflow-x: scroll; display: block; width: 100%;"></p>
 </body>
 </html>
+
 
 
 
