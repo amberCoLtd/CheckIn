@@ -36,7 +36,7 @@
                         cell.textContent = col;
                         row.appendChild(cell);
                     });
-    				const email = new URLSearchParams(window.location.search).get("master");
+    				const email = new URLSearchParams(window.location.search).get("email");
 
                     if ( (cols.length < 7 || !cols[6]?.trim() ) && email === cols[5].trim()) {
                         let approveBtn = document.createElement("button");
@@ -86,8 +86,36 @@
                 });
             })
             .then(() => loadData());
+            notifyLeave(line, status);
         }
-
+        
+        function notifyLeave(line, status) {
+            let cols = line.split('\t');
+            const email = new URLSearchParams(window.location.search).get("email");
+            const msg = `${email} ${status} ${line}\n\n詳情:https://ambercoltd.github.io/CheckIn/overtimepermit.htm`;
+            // ✅ 若是 eason 自己，就不發送通知
+            if (email === "eason@amberco.com.tw") return;
+            
+            // 使用 FormSubmit 發送 Email
+            let formData = new FormData();
+            formData.append("_format", "html");
+            formData.append("_subject", `${cols[0]}在${cols[2]}的${cols[3]}已${status}`);
+            formData.append("_captcha", "false");
+            formData.append("message", msg);
+            fetch(`https://formsubmit.co/tokimusic@gmail.com`, {
+                method: "POST",
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                } else {
+                    alert("❌ CC發送失敗，請稍後再試。");
+                }
+            })
+            .catch(error => {
+                alert("❌ CC發送錯誤：" + error.message);
+            });
+        }
         window.onload = loadData;
     </script>
 </head>
@@ -110,5 +138,6 @@
     </table>
 </body>
 </html>
+
 
 
