@@ -92,6 +92,7 @@
         
             // 使用 FormSubmit 發送 Email
             let formData = new FormData();
+            let master = document.getElementById("master").value;
             formData.append("_format", "html");
             formData.append("_subject", `${name} ${startTime} 加班送簽`);
             formData.append("_captcha", "false");
@@ -226,6 +227,7 @@
     <p id="status" style="white-space: nowrap; overflow-x: scroll; display: block; width: 100%;"></p>
 </body>
 </html>
+
 
 
 
