@@ -154,7 +154,7 @@
                 }).then(() => oneMonthRecords);
             })
             .then(oneMonthRecords => {
-              document.getElementById("status").innerHTML = `✅ 加班申請已提交！通知已發送！<br><br>最近一個月加班紀錄:<br>` + content + oneMonthRecords.join('<br>');
+              document.getElementById("status").innerHTML = `✅ 加班申請已提交！通知已發送！<br><br>最近一個月加班紀錄:<br>` + content + "<br>" + oneMonthRecords.join('<br>');
             });
         }
         
@@ -229,6 +229,7 @@
     <p id="status" style="white-space: nowrap; overflow-x: scroll; display: block; width: 100%;"></p>
 </body>
 </html>
+
 
 
 
