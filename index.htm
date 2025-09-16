@@ -9,6 +9,8 @@
         const GIST_ID = '7c94f03f1def80b2e4236a199f257c63';
         const GIST_FILE_NAME = 'checkin.txt';
         const TK = hexToString(TK_HEX);
+		const fetchOptions = {};
+		fetchOptions.headers = {"Authorization": `token ${TOKEN}`, "Accept": "application/vnd.github+json"};
 	const ALLOWED_LOCATIONS = [
 	  { name: "台北公司", lat: 24.986794380363925, lon: 121.5336918999006, radiusM: 200 },
 	  { name: "台中辦公室", lat: 24.310777911896015, lon: 120.72138183688088, radiusM: 2000 },
@@ -152,12 +154,7 @@
             const newContent = `050\t${formattedTime}\t${tel}\t${address}\r\n`;
         
             try {
-				let res = await fetch(`https://api.github.com/gists/${GIST_ID}?timestamp=${Date.now()}`, {
-				  headers: {
-				    "Authorization": `token ${TK}`,
-				    "Accept": "application/vnd.github+json" // 建議加上，確保回傳最新格式
-				  }
-				});
+				let res = await fetch(`https://api.github.com/gists/${GIST_ID}?timestamp=${Date.now()}`,fetchOptions);
 				let gistData = await res.json();
         
                 let existingContent = gistData.files[GIST_FILE_NAME]?.content || '';
