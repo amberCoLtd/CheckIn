@@ -16,7 +16,8 @@
         const TK = hexToString(TK_HEX);
         const GIST_ID = 'e5a30f0ae2615a23185d4fbc52767adc';
         const GIST_FILE_NAME = 'overtime.txt';
-        
+        const fetchOptions = {};
+        fetchOptions.headers = {"Authorization": `token ${TK}`,"Accept": "application/vnd.github+json"};
         function askForName() {
             let name = localStorage.getItem('name');
             if (!name) {
@@ -31,7 +32,7 @@
             return name;
         }
         function fetchLeaveRecords(name) {
-            fetch(`https://api.github.com/gists/${GIST_ID}`)
+            fetch(`https://api.github.com/gists/${GIST_ID}`,fetchOptions)
             .then(response => response.json())
             .then(data => {
                 let content = data.files[GIST_FILE_NAME]?.content || "";
@@ -116,7 +117,7 @@
         }
 
         function updateGist(content, name, startDateTime, endDateTime, leaveType, reason) {
-            fetch(`https://api.github.com/gists/${GIST_ID}`)
+            fetch(`https://api.github.com/gists/${GIST_ID}`,fetchOptions)
             .then(response => response.json())
             .then(data => {
                 let currentContent = data.files[GIST_FILE_NAME]?.content || "";
@@ -228,6 +229,7 @@
     <p id="status" style="white-space: nowrap; overflow-x: scroll; display: block; width: 100%;"></p>
 </body>
 </html>
+
 
 
 
