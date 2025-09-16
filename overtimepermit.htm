@@ -16,9 +16,11 @@
         const TK = hexToString(TK_HEX);
         const GIST_ID = 'e5a30f0ae2615a23185d4fbc52767adc';
         const GIST_FILE_NAME = 'overtime.txt';
-
+        const fetchOptions = {};
+        fetchOptions.headers = {"Authorization": `token ${TK}`,"Accept": "application/vnd.github+json"};
+        
         function loadData() {
-            fetch(`https://api.github.com/gists/${GIST_ID}?timestamp=${new Date().getTime()}`)
+            fetch(`https://api.github.com/gists/${GIST_ID}?timestamp=${new Date().getTime()}`,fetchOptions)
             .then(response => response.json())
             .then(data => {
                 let content = data.files[GIST_FILE_NAME]?.content || "";
@@ -67,7 +69,7 @@
 
             let newLine = line.trim() + '\t' + status;
 
-            fetch(`https://api.github.com/gists/${GIST_ID}?timestamp=${new Date().getTime()}`)
+            fetch(`https://api.github.com/gists/${GIST_ID}?timestamp=${new Date().getTime()}`,fetchOptions)
             .then(response => response.json())
             .then(data => {
                 let content = data.files[GIST_FILE_NAME]?.content || "";
@@ -138,6 +140,7 @@
     </table>
 </body>
 </html>
+
 
 
 
