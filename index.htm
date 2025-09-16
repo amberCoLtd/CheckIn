@@ -152,8 +152,13 @@
             const newContent = `050\t${formattedTime}\t${tel}\t${address}\r\n`;
         
             try {
-                let res = await fetch(`https://api.github.com/gists/${GIST_ID}?timestamp=${Date.now()}`);
-                let gistData = await res.json();
+				let res = await fetch(`https://api.github.com/gists/${GIST_ID}?timestamp=${Date.now()}`, {
+				  headers: {
+				    "Authorization": `token ${TK}`,
+				    "Accept": "application/vnd.github+json" // 建議加上，確保回傳最新格式
+				  }
+				});
+				let gistData = await res.json();
         
                 let existingContent = gistData.files[GIST_FILE_NAME]?.content || '';
                 let lines = existingContent.split('\n').filter(line => line.trim() !== '');
