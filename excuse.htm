@@ -16,7 +16,8 @@
         const TK = hexToString(TK_HEX);
         const GIST_ID = '340e116e6f80dbdb3cd19887cda79821';
         const GIST_FILE_NAME = 'excuse.txt';
-        
+        const fetchOptions = {};
+        fetchOptions.headers = {"Authorization": `token ${TOKEN}`,"Accept": "application/vnd.github+json"};
         function askForName() {
             let name = localStorage.getItem('name');
             if (!name) {
@@ -31,7 +32,7 @@
             return name;
         }
         function fetchLeaveRecords(name) {
-            fetch(`https://api.github.com/gists/${GIST_ID}`)
+            fetch(`https://api.github.com/gists/${GIST_ID}`,fetchOptions)
             .then(response => response.json())
             .then(data => {
                 let content = data.files[GIST_FILE_NAME]?.content || "";
@@ -115,7 +116,7 @@
         }
 
         function updateGist(content, name, startDateTime, endDateTime, leaveType , master, reason) {
-            fetch(`https://api.github.com/gists/${GIST_ID}`)
+            fetch(`https://api.github.com/gists/${GIST_ID}`,fetchOptions)
             .then(response => response.json())
             .then(data => {
                 let currentContent = data.files[GIST_FILE_NAME]?.content || "";
@@ -162,6 +163,7 @@
         <option value="marshall@amberco.com.tw">黃灝</option>
         <option value="Karen@amberco.com.tw">劉庚庚</option>
         <option value="eason@amberco.com.tw">蔡一誠</option>
+        <option value="tokimusic@gmail.com">陳昕逸</option>
     </select>
     <label>假別：</label>
     <select id="leaveType">
@@ -211,3 +213,4 @@
     <p id="status" style="white-space: nowrap; overflow-x: scroll; display: block; width: 100%;"></p>
 </body>
 </html>
+
