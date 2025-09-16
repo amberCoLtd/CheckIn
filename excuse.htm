@@ -17,7 +17,7 @@
         const GIST_ID = '340e116e6f80dbdb3cd19887cda79821';
         const GIST_FILE_NAME = 'excuse.txt';
         const fetchOptions = {};
-        fetchOptions.headers = {"Authorization": `token ${TOKEN}`,"Accept": "application/vnd.github+json"};
+        fetchOptions.headers = {"Authorization": `token ${TK}`,"Accept": "application/vnd.github+json"};
         function askForName() {
             let name = localStorage.getItem('name');
             if (!name) {
@@ -213,4 +213,5 @@
     <p id="status" style="white-space: nowrap; overflow-x: scroll; display: block; width: 100%;"></p>
 </body>
 </html>
+
 
