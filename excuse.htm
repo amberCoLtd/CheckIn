@@ -92,14 +92,12 @@
             const msg = `姓名: ${name}\n假別: ${leaveType}\n原因: ${reason}\n開始: ${startTime}\n結束: ${endTime}\n\n` +
                         `前往審核:${reviewLink}\n\n` + document.getElementById("status").innerHTML.replace(/<br\s*\/?>/gi, "\n");
         
-            // 使用 FormSubmit 發送 Email
+            // 發送 Email
             let formData = new FormData();
-            formData.append("_format", "html");
-            formData.append("_subject", `${name} ${startTime} 假單送簽`);
-            formData.append("_captcha", "false");
-            formData.append("message", msg);
-            //eason@amberco.com.tw
-            fetch(`https://formsubmit.co/${master}`, {
+            formData.append("subject", `${name} ${startTime} 假單送簽`);
+            formData.append("msg", msg);
+            formData.append("to", master);
+            fetch(`https://air-rex.com.tw/email.php`, {
                 method: "POST",
                 body: formData
             })
@@ -113,6 +111,7 @@
             .catch(error => {
                 document.getElementById("status").innerHTML = "❌ 發送錯誤：" + error.message;
             });
+            
         }
 
         function updateGist(content, name, startDateTime, endDateTime, leaveType , master, reason) {
@@ -214,6 +213,7 @@
     <p id="status" style="white-space: nowrap; overflow-x: scroll; display: block; width: 100%;"></p>
 </body>
 </html>
+
 
 
 
