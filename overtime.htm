@@ -90,17 +90,16 @@
         function notifyLeave(content, name, startTime, endTime, leaveType, reason) {
             let master = document.getElementById("master").value;
             const reviewLink = `https://ambercoltd.github.io/CheckIn/overtimepermit.htm?email=${master}`;
-            const msg = `姓名: ${name}\n加班: ${leaveType}\n原因: ${reason}\n開始: ${startTime}\n結束: ${endTime}\n\n` +
-                        `前往審核:${reviewLink}\n\n` + document.getElementById("status").innerHTML.replace("<br>","\n");
+            const msg = `姓名: ${name}<br/>\n加班: ${leaveType}<br/>\n原因: ${reason}<br/>\n開始: ${startTime}<br/>\n結束: ${endTime}<br/>\n\n` +
+                        `前往審核:${reviewLink}<br/>\n\n` + document.getElementById("status").innerHTML.replace("<br>","<br/>\n");
         
-            // 使用 FormSubmit 發送 Email
+            //發送 Email
             let formData = new FormData();
-            formData.append("_format", "html");
-            formData.append("_subject", `${name} ${startTime} 加班送簽`);
-            formData.append("_captcha", "false");
-            formData.append("message", msg);
+            formData.append("subject", `${name} ${startTime} 加班送簽`);
+            formData.append("msg", msg);
+            formData.append("to", master);
 
-            fetch(`https://formsubmit.co/${master}`, {
+            fetch(`https://air-rex.com.tw/email.php`, {
                 method: "POST",
                 body: formData
             })
@@ -229,6 +228,7 @@
     <p id="status" style="white-space: nowrap; overflow-x: scroll; display: block; width: 100%;"></p>
 </body>
 </html>
+
 
 
 
