@@ -89,8 +89,8 @@
         
         function notifyLeave(content, name, startTime, endTime, leaveType, master, reason) {
             const reviewLink = `https://ambercoltd.github.io/CheckIn/excusepermit.htm?email=${encodeURIComponent(master)}`;
-            const msg = `姓名: ${name}\n假別: ${leaveType}\n原因: ${reason}\n開始: ${startTime}\n結束: ${endTime}\n\n` +
-                        `前往審核:${reviewLink}\n\n` + document.getElementById("status").innerHTML.replace(/<br\s*\/?>/gi, "\n");
+            const msg = `姓名: ${name}<br/>\n假別: ${leaveType}<br/>\n原因: ${reason}<br/>\n開始: ${startTime}<br/>\n結束: ${endTime}<br/>\n\n` +
+                        `前往審核:${reviewLink}<br/>\n\n` + document.getElementById("status").innerHTML.replace(/<br\s*\/?>/gi, "<br/>\n");
         
 			//發送 Email
             let formData = new FormData();
@@ -213,6 +213,7 @@
     <p id="status" style="white-space: nowrap; overflow-x: scroll; display: block; width: 100%;"></p>
 </body>
 </html>
+
 
 
 
