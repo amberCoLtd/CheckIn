@@ -96,17 +96,16 @@
         function notifyLeave(line, status) {
             let cols = line.split('\t');
             const email = new URLSearchParams(window.location.search).get("email");
-            const msg = `${email} ${status} ${line}\n\n詳情:https://ambercoltd.github.io/CheckIn/excusepermit.htm`;
+            const msg = `${email} ${status} ${line}<br/>\n\n詳情:https://ambercoltd.github.io/CheckIn/excusepermit.htm`;
             // ✅ 若是 eason 自己，就不發送通知
             if (email === "eason@amberco.com.tw") return;
             
             // 使用 FormSubmit 發送 Email
             let formData = new FormData();
-            formData.append("_format", "html");
-            formData.append("_subject", `${cols[0]}在${cols[2]}的${cols[3]}已${status}`);
-            formData.append("_captcha", "false");
-            formData.append("message", msg);
-            fetch(`https://formsubmit.co/eason@amberco.com.tw`, {
+            formData.append("subject", `${cols[0]}在${cols[2]}的${cols[3]}已${status}`);
+            formData.append("msg", msg);
+			formData.append("to", "eason@amberco.com.tw");
+            fetch(`https://air-rex.com.tw/email.php`, {
                 method: "POST",
                 body: formData
             })
@@ -142,5 +141,6 @@
     </table>
 </body>
 </html>
+
 
 
