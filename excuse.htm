@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Amber請假系統</title>
+	<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+	<script>
+		await liff.init({ liffId: "liff-xxxx" });
+		const profile = await liff.getProfile();
+		console.log(profile.userId);
+	</script>
     <script>
         const TK_HEX = '6768705F4A3052654D6C75636C6B614B785A63494C4379316C5077754458486C5150313955304361';
         function hexToString(hex) {
@@ -213,6 +219,7 @@
     <p id="status" style="white-space: nowrap; overflow-x: scroll; display: block; width: 100%;"></p>
 </body>
 </html>
+
 
 
 
