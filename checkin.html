@@ -79,17 +79,21 @@ const TOKEN = hexToString(TK_HEX);
 let lineUserId = null;
 
 async function initLiffOnce() {
-  if (!window.liff) return;
-
   try {
     await liff.init({ liffId: LIFF_ID });
 
     if (liff.isLoggedIn()) {
       const profile = await liff.getProfile();
-      lineUserId = profile?.userId || null;
+      lineUserId = profile.userId;
     }
   } catch (e) {
-    console.warn("LIFF init failed:", e);
+    console.warn("LIFF init error:", e);
+  }
+}
+
+function lineLogin() {
+  if (!liff.isLoggedIn()) {
+    liff.login({ redirectUri: location.href });
   }
 }
 
@@ -99,25 +103,18 @@ async function updateTitle() {
   const tel = localStorage.getItem("tel");
   const title = document.getElementById("title");
 
-  let statusText = "未登入 LINE";
+  let status = "未登入 LINE";
 
-  try {
-    if (window.liff && liff.isLoggedIn()) {
-      const profile = await liff.getProfile();
-      statusText = profile?.userId || "未知使用者";
-    }
-  } catch (e) {
-    console.warn("LINE profile error:", e);
+  if (liff.isLoggedIn()) {
+    status = lineUserId || "未知使用者";
   }
 
   if (tel && /^\d{10}$/.test(tel)) {
-    title.textContent = `📍 ${tel}（${statusText}）打卡系統 V2.0`;
+    title.textContent = `📍 ${tel}（${status}）打卡系統 V2.0`;
   } else {
     title.textContent = `📍 打卡系統 V2.0`;
   }
 }
-
-
 
 function showLoading() {
   document.getElementById("loadingOverlay").classList.add("show");
@@ -303,7 +300,7 @@ window.onload = async () => {
 
 <button id="btnCheckin" onclick="updateMyFile()">打卡</button>
 <button id="btnClear" onclick="clearTel()">換電話</button>
-<button onclick="liff.login()">LINE 登入</button>
+<button onclick="lineLogin()">LINE 登入</button>
 
 <p id="status"></p>
 
