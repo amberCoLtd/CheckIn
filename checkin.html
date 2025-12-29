@@ -275,21 +275,23 @@ async function updateMyFile() {
 
 window.onload = async () => {
   await initLiffOnce();
+  
+  document.getElementById("btnCheckin").style.display =
+    lineUserId ? "inline-block" : "none";
+  
   if (!lineUserId) {
     alert("請使用 LINE 開啟此頁面");
+    
     return;
   }
 
   const hasUID = await loadUIDFile();
 
   if (!hasUID) {
-    alert("初次使用，請輸入TEL，注意要打對，打錯要500元請LINE修改");
+    alert("!!!初次使用，請輸入TEL，注意要打對，打錯要500元請LINE修改!!!");
     localStorage.removeItem("tel");
     getTel();
   }
-
-  document.getElementById("btnCheckin").style.display =
-    lineUserId ? "inline-block" : "none";
 
   updateTitle();
   loadMyFile();
