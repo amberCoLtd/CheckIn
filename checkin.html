@@ -260,7 +260,10 @@ async function updateMyFile() {
 
 window.onload = async () => {
   await initLiffOnce();
-
+  
+  document.getElementById("btnCheckin").style.display =
+    lineUserId ? "inline-block" : "none";
+  
   if (!lineUserId) {
     alert("請使用 LINE 開啟此頁面");
     return;
@@ -272,10 +275,8 @@ window.onload = async () => {
     getTel();
   }
 
-  document.getElementById("btnCheckin").style.display =
-    lineUserId ? "inline-block" : "none";
-
   updateTitle();
+  loadMyFile();
 };
 </script>
 </head>
