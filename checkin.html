@@ -91,8 +91,8 @@ function updateTitle() {
   let status = liff.isLoggedIn() ? "LINE已認證" : "未登入";
 
   title.textContent = tel
-    ? `📍 ${tel}（${status}）打卡系統 V2.1`
-    : `📍 打卡系統 V2.1`;
+    ? `📍 ${tel}（${status}）打卡系統 V2.2`
+    : `📍 打卡系統 V2.2`;
 }
 
 function showLoading() {
@@ -275,15 +275,16 @@ async function updateMyFile() {
 
 window.onload = async () => {
   await initLiffOnce();
-
   if (!lineUserId) {
     alert("請使用 LINE 開啟此頁面");
     return;
   }
-  localStorage.removeItem('tel');
+
   const hasUID = await loadUIDFile();
 
-  if (!hasUID && !localStorage.getItem("tel")) {
+  if (!hasUID) {
+    alert("初次使用，請輸入TEL，注意要打對，打錯要500元請LINE修改");
+    localStorage.removeItem("tel");
     getTel();
   }
 
@@ -302,7 +303,7 @@ window.onload = async () => {
   <div class="spinner"></div>
 </div>
 
-<h2 id="title">📍 打卡系統 V2.1</h2>
+<h2 id="title">📍 打卡系統 V2.2</h2>
 
 <button id="btnCheckin" onclick="updateMyFile()">打卡</button>
 
