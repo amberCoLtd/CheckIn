@@ -148,50 +148,95 @@
             await updateGist(tel, address);
         }
 
-        async function updateGist(tel, address) {
-            const now = new Date();
-            const formattedTime = `${now.getFullYear()}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-            const newContent = `050\t${formattedTime}\t${tel}\t${address}\r\n`;
-        
-            try {
-				let res = await fetch(`https://api.github.com/gists/${GIST_ID}?timestamp=${Date.now()}`,fetchOptions);
-				let gistData = await res.json();
-        
-                let existingContent = gistData.files[GIST_FILE_NAME]?.content || '';
-                let lines = existingContent.split('\n').filter(line => line.trim() !== '');
-        
-                // 計算時間範圍（30 天）
-                const oneMonthAgo = new Date();
-                oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
-        
-                // 過濾出最近 6 個月內的紀錄（存入 Gist）
-                let updatedLines = lines.filter(line => {
-                    const parts = line.split('\t');
-                    return parts.length > 1 && Date.parse(parts[1]) > Date.now() - 15552000000;
-                }).map(line => line.trim()); // 在這裡對每一行做 trim()
-        
-                // 過濾出最近 1 個月內相同 tel 的紀錄（顯示在 logRecords）
-                let recentRecords = updatedLines.filter(line => {
-                    const parts = line.split('\t');
-                    return parts.length > 2 && parts[2] === tel && Date.parse(parts[1]) >= oneMonthAgo;
-                });
-        
-                // 插入新紀錄到 Gist
-                updatedLines.unshift(newContent.trim());
-        
-                await fetch(`https://api.github.com/gists/${GIST_ID}`, {
-                    method: 'PATCH',
-                    headers: { 'Authorization': `token ${TK}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ files: { [GIST_FILE_NAME]: { content: updatedLines.join('\r\n') } } })
-                });
-        
-                document.getElementById("status").innerText = "打卡成功！";
-                document.getElementById("logRecords").innerText = newContent + recentRecords.join('\r\n'); // 只顯示最近 1 個月的記錄
-            } catch (error) {
-                alert("打卡失敗：" + error);
-            }
-        }
-
+		async function updateGist(tel, address) {
+		    const now = new Date();
+		    const formattedTime = `${now.getFullYear()}/${(now.getMonth() + 1)
+		        .toString().padStart(2, '0')}/${now.getDate().toString().padStart(2, '0')} ` +
+		        `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+		
+		    const newContent = `050\t${formattedTime}\t${tel}\t${address}`;
+		
+		    async function tryUpdate(retry = false) {
+		        try {
+		            // === 1. 讀取 Gist（取得 ETag）===
+		            const res = await fetch(`https://api.github.com/gists/${GIST_ID}?t=${Date.now()}`, {
+		                headers: {
+		                    "Authorization": `token ${TK}`,
+		                    "Accept": "application/vnd.github+json"
+		                }
+		            });
+		
+		            const etag = res.headers.get("ETag");
+		            const gistData = await res.json();
+		
+		            if (!etag || !gistData.files?.[GIST_FILE_NAME]) {
+		                throw new Error("無法讀取 Gist");
+		            }
+		
+		            let existingContent = gistData.files[GIST_FILE_NAME].content || '';
+		            let lines = existingContent.split('\n').filter(l => l.trim() !== '');
+		
+		            // 只保留近 6 個月
+		            const sixMonthsAgo = Date.now() - 15552000000;
+		            lines = lines.filter(line => {
+		                const parts = line.split('\t');
+		                return parts.length > 1 && Date.parse(parts[1]) > sixMonthsAgo;
+		            });
+		
+		            // 取最近一個月同電話紀錄（顯示用）
+		            const oneMonthAgo = Date.now() - 2592000000;
+		            const recentRecords = lines.filter(line => {
+		                const parts = line.split('\t');
+		                return parts[2] === tel && Date.parse(parts[1]) >= oneMonthAgo;
+		            });
+		
+		            // 新資料放最上面
+		            lines.unshift(newContent);
+		
+		            // === 2. 嘗試更新（使用 If-Match 防衝突）===
+		            const patchRes = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+		                method: "PATCH",
+		                headers: {
+		                    "Authorization": `token ${TK}`,
+		                    "Content-Type": "application/json",
+		                    "If-Match": etag
+		                },
+		                body: JSON.stringify({
+		                    files: {
+		                        [GIST_FILE_NAME]: {
+		                            content: lines.join("\r\n")
+		                        }
+		                    }
+		                })
+		            });
+		
+		            // 衝突（別人先寫入）
+		            if (patchRes.status === 412) {
+		                if (!retry) {
+		                    console.warn("衝突發生，重試一次...");
+		                    return await tryUpdate(true);
+		                } else {
+		                    alert("⚠️ 剛剛有人同時打卡，請稍後再試一次");
+		                    return;
+		                }
+		            }
+		
+		            if (!patchRes.ok) {
+		                throw new Error("更新失敗");
+		            }
+		
+		            // 成功
+		            document.getElementById("status").innerText = "✅ 打卡成功！";
+		            document.getElementById("logRecords").innerText =
+		                newContent + "\r\n" + recentRecords.join("\r\n");
+		
+		        } catch (err) {
+		            alert("打卡失敗：" + err.message);
+		        }
+		    }
+		
+		    await tryUpdate(false);
+		}
 
         function clearTel() {
             const pwd = prompt("請輸入密碼以清除電話號碼：");
