@@ -149,81 +149,62 @@
         }
 
 async function updateGist(tel, address) {
-  const debugEl = document.getElementById("debugLog");
-  const log = (s) => {
-    const line = `[${new Date().toLocaleTimeString()}] ${s}\n`;
-    if (debugEl) debugEl.textContent += line;
-    console.log(line);
-  };
+    const now = new Date();
+    const formattedTime = `${now.getFullYear()}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getDate().toString().padStart(2, '0')} ` +
+        `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
 
-  const now = new Date();
-  const formattedTime =
-    `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}/${String(now.getDate()).padStart(2, "0")} ` +
-    `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`;
+    const newContent = `050\t${formattedTime}\t${tel}\t${address}\r\n`;
 
-  const newLine = `050\t${formattedTime}\t${tel}\t${address}`;
-
-  // 小工具：讀取 response body（成功/失敗都安全）
-  async function safeReadBody(res) {
     try {
-      const text = await res.text();
-      return text || "";
-    } catch (e) {
-      return "";
+        // 讀取 Gist
+        let res = await fetch(`https://api.github.com/gists/${GIST_ID}?timestamp=${Date.now()}`, fetchOptions);
+        let gistData = await res.json();
+
+        let existingContent = gistData.files[GIST_FILE_NAME]?.content || '';
+        let lines = existingContent.split('\n').filter(line => line.trim() !== '');
+
+        // 只保留最近 6 個月資料
+        const sixMonthsAgo = Date.now() - 15552000000;
+        let updatedLines = lines.filter(line => {
+            const parts = line.split('\t');
+            return parts.length > 1 && Date.parse(parts[1]) > sixMonthsAgo;
+        }).map(line => line.trim());
+
+        // 最近 1 個月（顯示用）
+        const oneMonthAgo = Date.now() - 2592000000;
+        let recentRecords = updatedLines.filter(line => {
+            const parts = line.split('\t');
+            return parts.length > 2 && parts[2] === tel && Date.parse(parts[1]) >= oneMonthAgo;
+        });
+
+        // 新資料放最前面
+        updatedLines.unshift(newContent.trim());
+
+        // 寫回 Gist
+        await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `token ${TK}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                files: {
+                    [GIST_FILE_NAME]: {
+                        content: updatedLines.join('\r\n')
+                    }
+                }
+            })
+        });
+
+        document.getElementById("status").innerText = "打卡成功！";
+        document.getElementById("logRecords").innerText =
+            newContent + recentRecords.join('\r\n');
+
+    } catch (error) {
+        alert("打卡失敗：" + error);
     }
-  }
+}
 
-  // 小工具：GET JSON（把 status / body 都印出來）
-  async function fetchJson(url, headers) {
-    log(`FETCH GET: ${url}`);
-    const res = await fetch(url, {
-      method: "GET",
-      headers,
-      cache: "no-store",
-    });
-    log(`→ status=${res.status} ${res.statusText}`);
-
-    const bodyText = await safeReadBody(res);
-    // bodyText 可能是 JSON 也可能是錯誤訊息
-    if (!res.ok) {
-      log(`→ body=${bodyText.slice(0, 500)}`);
-      throw new Error(`GET 失敗：${res.status} ${res.statusText}`);
-    }
-
-    let json;
-    try {
-      json = bodyText ? JSON.parse(bodyText) : {};
-    } catch {
-      log(`→ body(非JSON)=${bodyText.slice(0, 500)}`);
-      throw new Error("GET 回傳不是 JSON（異常）");
-    }
-    return { res, json };
-  }
-
-  async function patchGist(etag, content) {
-    log(`FETCH PATCH: https://api.github.com/gists/${GIST_ID}`);
-    const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
-      method: "PATCH",
-      headers: {
-        "Authorization": `token ${TK}`,
-        "Accept": "application/vnd.github+json",
-        "Content-Type": "application/json",
-        ...(etag ? { "If-Match": etag } : {}),
-      },
-      body: JSON.stringify({
-        files: {
-          [GIST_FILE_NAME]: { content }
-        }
-      }),
-    });
-
-    log(`→ PATCH status=${res.status} ${res.statusText}`);
-    const bodyText = await safeReadBody(res);
-    if (!res.ok) {
-      log(`→ PATCH body=${bodyText.slice(0, 800)}`);
-    }
-    return { res, bodyText };
-  }
 
   async function tryUpdate(isRetry) {
     // 0) 基本連線測試：能不能打到 GitHub API（不帶 token）
