@@ -10,6 +10,14 @@ body {
   font-family: sans-serif;
   padding: 20px;
 }
+h2 {
+  margin-bottom: 10px;
+}
+button {
+  padding: 8px 14px;
+  font-size: 15px;
+  margin-bottom: 10px;
+}
 table {
   width: 100%;
   border-collapse: collapse;
@@ -26,8 +34,9 @@ tr:nth-child(even) {
   background: #fafafa;
 }
 #loading {
-  font-size: 18px;
+  font-size: 16px;
   color: #666;
+  margin-bottom: 10px;
 }
 </style>
 </head>
@@ -35,6 +44,9 @@ tr:nth-child(even) {
 <body>
 
 <h2>📄 最近 60 天打卡紀錄</h2>
+
+<button onclick="downloadTxt()">⬇️ 下載 TXT</button>
+
 <div id="loading">讀取中...</div>
 
 <table id="table" style="display:none">
@@ -62,7 +74,9 @@ function hexToString(hex) {
 }
 const TOKEN = hexToString(TK_HEX);
 
-/* ========= 讀取 Gist ========= */
+/* ========= 主邏輯 ========= */
+
+let recordCache = [];
 
 async function loadAllRecords() {
   const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
@@ -85,10 +99,10 @@ async function loadAllRecords() {
 
   let rows = [];
 
-  for (const filename in files) {
-    if (!filename.endsWith(".txt")) continue;
+  for (const name in files) {
+    if (!name.endsWith(".txt")) continue;
 
-    const content = files[filename].content || "";
+    const content = files[name].content || "";
     const lines = content.split("\n");
 
     for (const line of lines) {
@@ -111,8 +125,11 @@ async function loadAllRecords() {
 
   // 新 → 舊排序
   rows.sort((a, b) => b.time - a.time);
+  recordCache = rows;
 
   const tbody = document.getElementById("tbody");
+  tbody.innerHTML = "";
+
   rows.forEach(r => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -126,6 +143,32 @@ async function loadAllRecords() {
   document.getElementById("loading").style.display = "none";
   document.getElementById("table").style.display = "table";
 }
+
+/* ========= 下載 TXT ========= */
+
+function downloadTxt() {
+  if (!recordCache.length) {
+    alert("沒有資料可下載");
+    return;
+  }
+
+  const text = recordCache
+    .map(r => `050\t${r.timeText}\t${r.tel}\t${r.location}`)
+    .join("\r\n");
+
+  const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `checkin_${new Date().toISOString().slice(0, 10)}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ========= 啟動 ========= */
 
 loadAllRecords();
 </script>
