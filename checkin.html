@@ -304,10 +304,17 @@ async function loadMyFile() {
 }
 
 window.onload = async () => {
-  // 先嘗試更新一次標題（若在 LINE + 已登入會顯示 uuid）
-  await updateTitle();
+  try {
+    await liff.init({ liffId: "2008796195-ptiXdSsI" });
+    console.log("LIFF init OK");
+  } catch (e) {
+    alert("LIFF 初始化失敗：" + e.message);
+  }
+
+  updateTitle();
   loadMyFile();
 };
+
 </script>
 </head>
 
