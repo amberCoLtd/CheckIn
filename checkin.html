@@ -105,7 +105,7 @@ function updateTitle() {
   let status = liff.isLoggedIn() ? "LINE已認證" : "未登入";
 
   title.textContent = tel
-    ? `📍 ${tel}（${status}）打卡系統 V2.2`
+    ? `📍 ${tel}（${status}） 📍 打卡系統 V2.2`
     : `📍 打卡系統 V2.2`;
 }
 
@@ -291,6 +291,7 @@ async function updateMyFile() {
 /* ================= 啟動 ================= */
 
 window.onload = async () => {
+  document.getElementById("btnCheckin").style.display = "none";
   await initLiffOnce();
 
   document.getElementById("btnCheckin").style.display =
