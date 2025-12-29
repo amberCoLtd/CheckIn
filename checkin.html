@@ -47,7 +47,6 @@ pre {
   to { transform: rotate(360deg); }
 }
 
-/* 放行提示 */
 #freePass {
   display: none;
   margin-top: 40px;
@@ -160,6 +159,8 @@ function findNearestLocation(lat, lon) {
 
 /* ================= GitHub ================= */
 
+let gistCache = null;
+
 async function githubGET() {
   return fetch(`https://api.github.com/gists/${GIST_ID}`, {
     headers: {
@@ -167,6 +168,16 @@ async function githubGET() {
       "Accept": "application/vnd.github+json"
     }
   });
+}
+
+async function getGistData() {
+  if (gistCache) return gistCache;
+
+  const res = await githubGET();
+  if (!res.ok) throw new Error("Gist 連線失敗");
+
+  gistCache = await res.json();
+  return gistCache;
 }
 
 async function githubPATCH(payload) {
@@ -187,33 +198,31 @@ function getFileName() {
 }
 
 async function loadUIDFile() {
-  const res = await githubGET();
-  if (!res.ok) return false;
+  try {
+    const data = await getGistData();
+    const file = data.files[getFileName()];
+    if (!file) return false;
 
-  const data = await res.json();
-  const file = data.files[getFileName()];
-  if (!file) return false;
+    const first = file.content.split("\n")[0];
+    const parts = first.split("\t");
 
-  const first = file.content.split("\n")[0];
-  const parts = first.split("\t");
-
-  if (parts.length >= 3 && /^\d{10}$/.test(parts[2])) {
-    localStorage.setItem("tel", parts[2]);
-    return true;
+    if (parts.length >= 3 && /^\d{10}$/.test(parts[2])) {
+      localStorage.setItem("tel", parts[2]);
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
   }
-  return false;
 }
 
-/* ================= 讀取紀錄（含放行） ================= */
+/* ================= 讀取紀錄 ================= */
 
 async function loadMyFile() {
   if (!lineUserId) return;
 
   try {
-    const res = await githubGET();
-    if (!res.ok) throw new Error("Gist 連線失敗");
-
-    const data = await res.json();
+    const data = await getGistData();
     const file = data.files[getFileName()];
 
     if (!file || !file.content) {
@@ -225,12 +234,10 @@ async function loadMyFile() {
 
   } catch (err) {
     console.error(err);
-
     document.getElementById("records").textContent = "";
     document.getElementById("freePass").style.display = "block";
     document.getElementById("btnCheckin").style.display = "none";
-    document.getElementById("status").innerText =
-      "⚠ 系統異常，自動放行";
+    document.getElementById("status").innerText = "⚠ 系統異常，自動放行";
   }
 }
 
@@ -258,8 +265,7 @@ async function updateMyFile() {
 
     const line = `050\t${timeStr}\t${getTel()}\t${loc.name} (${loc.distance}m)`;
 
-    const res = await githubGET();
-    const data = await res.json();
+    const data = await getGistData();
     const old = data.files[getFileName()]?.content || "";
 
     const nowTime = Date.now();
@@ -278,6 +284,8 @@ async function updateMyFile() {
       }
     });
 
+    gistCache = null; // 清快取
+
     document.getElementById("status").innerText = "✅ 打卡成功";
     document.getElementById("records").textContent = filtered.join("\n");
 
@@ -292,6 +300,7 @@ async function updateMyFile() {
 
 window.onload = async () => {
   document.getElementById("btnCheckin").style.display = "none";
+
   await initLiffOnce();
 
   document.getElementById("btnCheckin").style.display =
