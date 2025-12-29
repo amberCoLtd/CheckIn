@@ -280,7 +280,7 @@ window.onload = async () => {
     alert("請使用 LINE 開啟此頁面");
     return;
   }
-
+  localStorage.removeItem('tel');
   const hasUID = await loadUIDFile();
 
   if (!hasUID && !localStorage.getItem("tel")) {
