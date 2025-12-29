@@ -99,21 +99,15 @@ async function updateTitle() {
   const tel = localStorage.getItem("tel");
   const title = document.getElementById("title");
 
-  let statusText = "非 LINE 環境";
+  let statusText = "未登入 LINE";
 
-  if (window.liff) {
-    if (!liff.isInClient()) {
-      statusText = "請用 LINE 開啟";
-    } else if (!liff.isLoggedIn()) {
-      statusText = "尚未登入 LINE";
-    } else {
-      try {
-        const profile = await liff.getProfile();
-        statusText = profile.userId || "未知使用者";
-      } catch (e) {
-        statusText = "讀取失敗";
-      }
+  try {
+    if (window.liff && liff.isLoggedIn()) {
+      const profile = await liff.getProfile();
+      statusText = profile?.userId || "未知使用者";
     }
+  } catch (e) {
+    console.warn("LINE profile error:", e);
   }
 
   if (tel && /^\d{10}$/.test(tel)) {
@@ -122,6 +116,7 @@ async function updateTitle() {
     title.textContent = `📍 打卡系統 V2.0`;
   }
 }
+
 
 
 function showLoading() {
