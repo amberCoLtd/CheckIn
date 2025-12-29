@@ -3,33 +3,49 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>LINE 打卡系統</title>
+<title>打卡系統</title>
 
 <style>
-  body { font-family: sans-serif; padding: 20px; }
-  button { padding: 10px 16px; font-size: 16px; margin-right: 8px; }
-  pre { background: #111; color: #0f0; padding: 10px; white-space: pre-wrap; }
+body {
+  font-family: sans-serif;
+  padding: 20px;
+}
+button {
+  padding: 10px 16px;
+  font-size: 16px;
+  margin-right: 8px;
+}
+pre {
+  background: #111;
+  color: #0f0;
+  padding: 10px;
+  white-space: pre-wrap;
+}
 
-  /* ===== 灰幕 loading ===== */
-  #loadingOverlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.45);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-  }
-  #loadingOverlay.show { display: flex; }
-  .spinner {
-    width: 56px;
-    height: 56px;
-    border: 6px solid rgba(255,255,255,0.35);
-    border-top-color: #fff;
-    border-radius: 50%;
-    animation: spin 0.9s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
+/* loading */
+#loadingOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+#loadingOverlay.show {
+  display: flex;
+}
+.spinner {
+  width: 56px;
+  height: 56px;
+  border: 6px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 </style>
 
 <script>
@@ -47,25 +63,37 @@ const ALLOWED_LOCATIONS = [
 
 function hexToString(hex) {
   let str = '';
-  for (let i = 0; i < hex.length; i += 2) str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+  for (let i = 0; i < hex.length; i += 2)
+    str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
   return str;
 }
 const TOKEN = hexToString(TK_HEX);
 
-/* ================= UI：Loading ================= */
+/* ================= UI ================= */
+
+function updateTitle() {
+  const tel = localStorage.getItem("tel");
+  const title = document.getElementById("title");
+  if (tel && /^\d{10}$/.test(tel)) {
+    title.textContent = `📍 ${tel} 打卡系統 V2.0`;
+  } else {
+    title.textContent = "📍 打卡系統 V2.0";
+  }
+}
 
 function showLoading() {
   document.getElementById("loadingOverlay").classList.add("show");
   document.getElementById("btnCheckin").disabled = true;
   document.getElementById("btnClear").disabled = true;
 }
+
 function hideLoading() {
   document.getElementById("loadingOverlay").classList.remove("show");
   document.getElementById("btnCheckin").disabled = false;
   document.getElementById("btnClear").disabled = false;
 }
 
-/* ================= 工具 ================= */
+/* ================= 基本工具 ================= */
 
 function getTel() {
   let tel = localStorage.getItem("tel");
@@ -77,6 +105,7 @@ function getTel() {
     }
     localStorage.setItem("tel", tel);
   }
+  updateTitle();
   return tel;
 }
 
@@ -88,6 +117,7 @@ function clearTel() {
   }
   localStorage.removeItem("tel");
   alert("✅ 已清除");
+  updateTitle();
   location.reload();
 }
 
@@ -95,7 +125,7 @@ function getFileName(tel) {
   return `${tel}.txt`;
 }
 
-/* ================= GPS / 距離 ================= */
+/* ================= GPS ================= */
 
 function distance(lat1, lon1, lat2, lon2) {
   const R = 6371e3;
@@ -127,7 +157,7 @@ function findNearestLocation(lat, lon) {
   };
 }
 
-/* ================= GitHub API ================= */
+/* ================= GitHub ================= */
 
 async function githubGET() {
   return fetch(`https://api.github.com/gists/${GIST_ID}`, {
@@ -151,43 +181,20 @@ async function githubPATCH(payload) {
 
 /* ================= 主流程 ================= */
 
-let isCheckingIn = false;
-
-function getLocationOnce(options) {
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
-      reject(new Error("瀏覽器不支援定位"));
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      pos => resolve(pos),
-      err => reject(err),
-      options
-    );
-  });
-}
-
 async function updateMyFile() {
-  if (isCheckingIn) return;
-  isCheckingIn = true;
+  if (!getTel()) return;
+
   showLoading();
-  document.getElementById("status").innerText = "";
 
   try {
-    const tel = getTel();
-    if (!tel) return;
+    const pos = await new Promise((res, rej) =>
+      navigator.geolocation.getCurrentPosition(res, rej, {
+        enableHighAccuracy: true,
+        timeout: 15000
+      })
+    );
 
-    // 定位（加 timeout 避免卡住）
-    const pos = await getLocationOnce({
-      enableHighAccuracy: true,
-      timeout: 15000,
-      maximumAge: 0
-    });
-
-    const lat = pos.coords.latitude;
-    const lon = pos.coords.longitude;
-
-    const nearest = findNearestLocation(lat, lon);
+    const nearest = findNearestLocation(pos.coords.latitude, pos.coords.longitude);
     const locationText = `${nearest.name} (${nearest.distance}m)`;
 
     const now = new Date();
@@ -195,54 +202,39 @@ async function updateMyFile() {
       `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ` +
       `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
 
-    // 你指定的格式：050 + time + tel + address + \r\n
-    const newLine = `050\t${formattedTime}\t${tel}\t${locationText}`;
+    const newLine = `050\t${formattedTime}\t${getTel()}\t${locationText}`;
 
-    // 讀取 Gist
     const res = await githubGET();
-    if (!res.ok) throw new Error(`讀取 Gist 失敗 (${res.status})`);
     const data = await res.json();
 
-    const fileName = getFileName(tel);
+    const fileName = getFileName(getTel());
     const old = data.files[fileName]?.content || "";
 
-    // 清除 90 天前
     const nowTime = Date.now();
-    const ninetyDaysMs = 90 * 24 * 60 * 60 * 1000;
-
-    const filtered = old
-      .split("\n")
-      .map(l => l.trim())
-      .filter(line => {
-        if (!line) return false;
-        const parts = line.split("\t");
-        if (parts.length < 2) return false;
-        const t = Date.parse(parts[1]);
-        return !isNaN(t) && (nowTime - t <= ninetyDaysMs);
-      });
+    const filtered = old.split("\n").filter(line => {
+      const p = line.split("\t");
+      if (p.length < 2) return false;
+      const t = Date.parse(p[1]);
+      return !isNaN(t) && (nowTime - t <= 90 * 24 * 60 * 60 * 1000);
+    });
 
     filtered.unshift(newLine);
 
-    // 存檔用內容（用 \r\n 連接更符合你原本習慣）
     const content = filtered.join("\r\n");
 
-    // 寫回 GitHub
     const patchRes = await githubPATCH({
       files: { [fileName]: { content } }
     });
 
-    if (!patchRes.ok) throw new Error(`寫入失敗 (${patchRes.status})`);
+    if (!patchRes.ok) throw new Error("寫入失敗");
 
     document.getElementById("status").innerText = "✅ 打卡成功";
     document.getElementById("records").textContent = content;
 
-  } catch (err) {
-    const msg = (err && err.message) ? err.message : String(err);
-    alert("❌ 打卡失敗：" + msg);
-    document.getElementById("status").innerText = "❌ 打卡失敗";
+  } catch (e) {
+    alert("❌ 打卡失敗：" + e.message);
   } finally {
     hideLoading();
-    isCheckingIn = false;
   }
 }
 
@@ -250,20 +242,16 @@ async function loadMyFile() {
   const tel = getTel();
   if (!tel) return;
 
-  try {
-    const res = await githubGET();
-    if (!res.ok) return;
-    const data = await res.json();
+  const res = await githubGET();
+  if (!res.ok) return;
 
-    const file = data.files[getFileName(tel)];
-    if (file) document.getElementById("records").textContent = file.content;
-  } catch {
-    // 不吵使用者
-  }
+  const data = await res.json();
+  const file = data.files[getFileName(tel)];
+  if (file) document.getElementById("records").textContent = file.content;
 }
 
-/* ================= 啟動 ================= */
 window.onload = () => {
+  updateTitle();
   loadMyFile();
 };
 </script>
@@ -271,12 +259,11 @@ window.onload = () => {
 
 <body>
 
-<!-- 灰幕 loading -->
-<div id="loadingOverlay" aria-hidden="true">
-  <div class="spinner" aria-label="loading"></div>
+<div id="loadingOverlay">
+  <div class="spinner"></div>
 </div>
 
-<h2>📍 2026打卡系統</h2>
+<h2 id="title">📍 打卡系統 V2.0</h2>
 
 <button id="btnCheckin" onclick="updateMyFile()">打卡</button>
 <button id="btnClear" onclick="clearTel()">換電話</button>
