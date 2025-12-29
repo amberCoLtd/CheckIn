@@ -33,6 +33,9 @@ th {
 tr:nth-child(even) {
   background: #fafafa;
 }
+tr.alert {
+  background: #ffe3e3 !important;
+}
 #loading {
   font-size: 16px;
   color: #666;
@@ -78,6 +81,16 @@ const TOKEN = hexToString(TK_HEX);
 
 let recordCache = [];
 
+function normalizeLocation(str) {
+  // 將「公尺」轉成 m
+  return str.replace(/公尺/g, "m");
+}
+
+function getDistanceFromText(text) {
+  const match = text.match(/(\d+)\s*m/);
+  return match ? parseInt(match[1], 10) : null;
+}
+
 async function loadAllRecords() {
   const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
     headers: {
@@ -112,19 +125,30 @@ async function loadAllRecords() {
       const time = Date.parse(parts[1]);
       if (isNaN(time)) continue;
 
-      if (now - time <= DAYS_60) {
-        rows.push({
-          time,
-          timeText: parts[1],
-          tel: parts[2],
-          location: parts[3]
-        });
-      }
+      if (now - time > DAYS_60) continue;
+
+      const location = normalizeLocation(parts[3]);
+      const dist = getDistanceFromText(location);
+
+      const isAbnormal = (dist === null || dist > 3000);
+
+      rows.push({
+        time,
+        timeText: parts[1],
+        tel: parts[2],
+        location,
+        isAbnormal
+      });
     }
   }
 
-  // 新 → 舊排序
-  rows.sort((a, b) => b.time - a.time);
+  // 排序：異常在前 → 時間新到舊
+  rows.sort((a, b) => {
+    if (a.isAbnormal !== b.isAbnormal)
+      return a.isAbnormal ? -1 : 1;
+    return b.time - a.time;
+  });
+
   recordCache = rows;
 
   const tbody = document.getElementById("tbody");
@@ -132,6 +156,8 @@ async function loadAllRecords() {
 
   rows.forEach(r => {
     const tr = document.createElement("tr");
+    if (r.isAbnormal) tr.classList.add("alert");
+
     tr.innerHTML = `
       <td>${r.timeText}</td>
       <td>${r.tel}</td>
@@ -161,7 +187,7 @@ function downloadTxt() {
 
   const a = document.createElement("a");
   a.href = url;
-  a.download = `amber_${new Date().toISOString().slice(0, 10)}.txt`;
+  a.download = `checkin_${new Date().toISOString().slice(0,10)}.txt`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -169,7 +195,6 @@ function downloadTxt() {
 }
 
 /* ========= 啟動 ========= */
-
 loadAllRecords();
 </script>
 
