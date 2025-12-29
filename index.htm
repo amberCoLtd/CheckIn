@@ -6,21 +6,30 @@
 <title>LINE 打卡系統</title>
 
 <style>
-body {
-    font-family: sans-serif;
-    padding: 20px;
-}
-button {
-    padding: 10px 16px;
-    font-size: 16px;
-    margin-right: 8px;
-}
-pre {
-    background: #111;
-    color: #0f0;
-    padding: 10px;
-    white-space: pre-wrap;
-}
+  body { font-family: sans-serif; padding: 20px; }
+  button { padding: 10px 16px; font-size: 16px; margin-right: 8px; }
+  pre { background: #111; color: #0f0; padding: 10px; white-space: pre-wrap; }
+
+  /* ===== 灰幕 loading ===== */
+  #loadingOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  }
+  #loadingOverlay.show { display: flex; }
+  .spinner {
+    width: 56px;
+    height: 56px;
+    border: 6px solid rgba(255,255,255,0.35);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 
 <script>
@@ -37,182 +46,240 @@ const ALLOWED_LOCATIONS = [
 ];
 
 function hexToString(hex) {
-    let str = '';
-    for (let i = 0; i < hex.length; i += 2)
-        str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
-    return str;
+  let str = '';
+  for (let i = 0; i < hex.length; i += 2) str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+  return str;
 }
-
 const TOKEN = hexToString(TK_HEX);
+
+/* ================= UI：Loading ================= */
+
+function showLoading() {
+  document.getElementById("loadingOverlay").classList.add("show");
+  document.getElementById("btnCheckin").disabled = true;
+  document.getElementById("btnClear").disabled = true;
+}
+function hideLoading() {
+  document.getElementById("loadingOverlay").classList.remove("show");
+  document.getElementById("btnCheckin").disabled = false;
+  document.getElementById("btnClear").disabled = false;
+}
 
 /* ================= 工具 ================= */
 
 function getTel() {
-    let tel = localStorage.getItem("tel");
-    if (!tel || !/^\d{10}$/.test(tel)) {
-        tel = prompt("請輸入 10 碼手機號碼：");
-        if (!/^\d{10}$/.test(tel)) {
-            alert("電話格式錯誤");
-            return null;
-        }
-        localStorage.setItem("tel", tel);
+  let tel = localStorage.getItem("tel");
+  if (!tel || !/^\d{10}$/.test(tel)) {
+    tel = prompt("請輸入 10 碼手機號碼：");
+    if (!/^\d{10}$/.test(tel)) {
+      alert("電話格式錯誤");
+      return null;
     }
-    return tel;
+    localStorage.setItem("tel", tel);
+  }
+  return tel;
 }
 
 function clearTel() {
-    const pwd = prompt("請輸入管理密碼：");
-    if (pwd !== REMOVE_PWD) {
-        alert("❌ 密碼錯誤");
-        return;
-    }
-    localStorage.removeItem("tel");
-    alert("✅ 已清除");
-    location.reload();
+  const pwd = prompt("請輸入管理密碼：");
+  if (pwd !== REMOVE_PWD) {
+    alert("❌ 密碼錯誤");
+    return;
+  }
+  localStorage.removeItem("tel");
+  alert("✅ 已清除");
+  location.reload();
 }
 
 function getFileName(tel) {
-    return `${tel}.txt`;
+  return `${tel}.txt`;
 }
 
 /* ================= GPS / 距離 ================= */
 
 function distance(lat1, lon1, lat2, lon2) {
-    const R = 6371e3;
-    const toRad = d => d * Math.PI / 180;
-    const dLat = toRad(lat2 - lat1);
-    const dLon = toRad(lon2 - lon1);
-    const a =
-        Math.sin(dLat / 2) ** 2 +
-        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-        Math.sin(dLon / 2) ** 2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const R = 6371e3;
+  const toRad = d => d * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 function findNearestLocation(lat, lon) {
-    let nearest = null;
-    let minDist = Infinity;
+  let nearest = null;
+  let minDist = Infinity;
 
-    for (const loc of ALLOWED_LOCATIONS) {
-        const d = distance(lat, lon, loc.lat, loc.lon);
-        if (d < minDist) {
-            minDist = d;
-            nearest = loc;
-        }
+  for (const loc of ALLOWED_LOCATIONS) {
+    const d = distance(lat, lon, loc.lat, loc.lon);
+    if (d < minDist) {
+      minDist = d;
+      nearest = loc;
     }
+  }
 
-    return {
-        name: nearest ? nearest.name : "未知位置",
-        distance: Math.round(minDist)
-    };
+  return {
+    name: nearest ? nearest.name : "未知位置",
+    distance: Math.round(minDist)
+  };
 }
 
 /* ================= GitHub API ================= */
 
 async function githubGET() {
-    return fetch(`https://api.github.com/gists/${GIST_ID}`, {
-        headers: {
-            "Authorization": `token ${TOKEN}`,
-            "Accept": "application/vnd.github+json"
-        }
-    });
+  return fetch(`https://api.github.com/gists/${GIST_ID}`, {
+    headers: {
+      "Authorization": `token ${TOKEN}`,
+      "Accept": "application/vnd.github+json"
+    }
+  });
 }
 
 async function githubPATCH(payload) {
-    return fetch(`https://api.github.com/gists/${GIST_ID}`, {
-        method: "PATCH",
-        headers: {
-            "Authorization": `token ${TOKEN}`,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
-    });
+  return fetch(`https://api.github.com/gists/${GIST_ID}`, {
+    method: "PATCH",
+    headers: {
+      "Authorization": `token ${TOKEN}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
 }
 
 /* ================= 主流程 ================= */
 
+let isCheckingIn = false;
+
+function getLocationOnce(options) {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error("瀏覽器不支援定位"));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve(pos),
+      err => reject(err),
+      options
+    );
+  });
+}
+
 async function updateMyFile() {
+  if (isCheckingIn) return;
+  isCheckingIn = true;
+  showLoading();
+  document.getElementById("status").innerText = "";
+
+  try {
     const tel = getTel();
     if (!tel) return;
 
-    navigator.geolocation.getCurrentPosition(async pos => {
-        const lat = pos.coords.latitude;
-        const lon = pos.coords.longitude;
-
-        const nearest = findNearestLocation(lat, lon);
-        const locationText = `${nearest.name} (${nearest.distance}m)`;
-
-        const now = new Date();
-        const formattedTime =
-            `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ` +
-            `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-
-        const newLine = `050\t${formattedTime}\t${tel}\t${locationText}`;
-
-        const res = await githubGET();
-        const data = await res.json();
-
-        const fileName = getFileName(tel);
-        const old = data.files[fileName]?.content || "";
-
-        // 清除 90 天前
-        const nowTime = Date.now();
-        const filtered = old.split("\n").filter(line => {
-            const parts = line.split("\t");
-            if (parts.length < 2) return false;
-            const t = Date.parse(parts[1]);
-            return !isNaN(t) && (nowTime - t <= 90 * 24 * 60 * 60 * 1000);
-        });
-
-        filtered.unshift(newLine);
-
-        const content = filtered.join("\n");
-
-        const patchRes = await githubPATCH({
-            files: {
-                [fileName]: { content }
-            }
-        });
-
-        if (!patchRes.ok) {
-            alert("❌ 打卡失敗");
-            return;
-        }
-
-        document.getElementById("status").innerText = "✅ 打卡成功";
-        document.getElementById("records").textContent = content;
-
-    }, err => {
-        alert("無法取得定位：" + err.message);
+    // 定位（加 timeout 避免卡住）
+    const pos = await getLocationOnce({
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0
     });
+
+    const lat = pos.coords.latitude;
+    const lon = pos.coords.longitude;
+
+    const nearest = findNearestLocation(lat, lon);
+    const locationText = `${nearest.name} (${nearest.distance}m)`;
+
+    const now = new Date();
+    const formattedTime =
+      `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ` +
+      `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+
+    // 你指定的格式：050 + time + tel + address + \r\n
+    const newLine = `050\t${formattedTime}\t${tel}\t${locationText}`;
+
+    // 讀取 Gist
+    const res = await githubGET();
+    if (!res.ok) throw new Error(`讀取 Gist 失敗 (${res.status})`);
+    const data = await res.json();
+
+    const fileName = getFileName(tel);
+    const old = data.files[fileName]?.content || "";
+
+    // 清除 90 天前
+    const nowTime = Date.now();
+    const ninetyDaysMs = 90 * 24 * 60 * 60 * 1000;
+
+    const filtered = old
+      .split("\n")
+      .map(l => l.trim())
+      .filter(line => {
+        if (!line) return false;
+        const parts = line.split("\t");
+        if (parts.length < 2) return false;
+        const t = Date.parse(parts[1]);
+        return !isNaN(t) && (nowTime - t <= ninetyDaysMs);
+      });
+
+    filtered.unshift(newLine);
+
+    // 存檔用內容（用 \r\n 連接更符合你原本習慣）
+    const content = filtered.join("\r\n");
+
+    // 寫回 GitHub
+    const patchRes = await githubPATCH({
+      files: { [fileName]: { content } }
+    });
+
+    if (!patchRes.ok) throw new Error(`寫入失敗 (${patchRes.status})`);
+
+    document.getElementById("status").innerText = "✅ 打卡成功";
+    document.getElementById("records").textContent = content;
+
+  } catch (err) {
+    const msg = (err && err.message) ? err.message : String(err);
+    alert("❌ 打卡失敗：" + msg);
+    document.getElementById("status").innerText = "❌ 打卡失敗";
+  } finally {
+    hideLoading();
+    isCheckingIn = false;
+  }
 }
 
 async function loadMyFile() {
-    const tel = getTel();
-    if (!tel) return;
+  const tel = getTel();
+  if (!tel) return;
 
+  try {
     const res = await githubGET();
+    if (!res.ok) return;
     const data = await res.json();
 
     const file = data.files[getFileName(tel)];
-    if (file) {
-        document.getElementById("records").textContent = file.content;
-    }
+    if (file) document.getElementById("records").textContent = file.content;
+  } catch {
+    // 不吵使用者
+  }
 }
 
 /* ================= 啟動 ================= */
 window.onload = () => {
-    loadMyFile();
+  loadMyFile();
 };
 </script>
 </head>
 
 <body>
 
-<h2>📍 打卡系統</h2>
+<!-- 灰幕 loading -->
+<div id="loadingOverlay" aria-hidden="true">
+  <div class="spinner" aria-label="loading"></div>
+</div>
 
-<button onclick="updateMyFile()">打卡</button>
-<button onclick="clearTel()">換電話</button>
+<h2>📍 2026打卡系統</h2>
+
+<button id="btnCheckin" onclick="updateMyFile()">打卡</button>
+<button id="btnClear" onclick="clearTel()">換電話</button>
 
 <p id="status"></p>
 
