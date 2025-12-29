@@ -46,6 +46,20 @@ pre {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* 放行提示 */
+#freePass {
+  display: none;
+  margin-top: 40px;
+  padding: 20px;
+  font-size: 22px;
+  text-align: center;
+  background: #fff3cd;
+  color: #b02a37;
+  border: 2px dashed #ff6b6b;
+  border-radius: 12px;
+  font-weight: bold;
+}
 </style>
 
 <script>
@@ -190,17 +204,14 @@ async function loadUIDFile() {
   return false;
 }
 
-/* ================= 讀取紀錄 ================= */
+/* ================= 讀取紀錄（含放行） ================= */
 
 async function loadMyFile() {
   if (!lineUserId) return;
 
   try {
     const res = await githubGET();
-    if (!res.ok) {
-      document.getElementById("records").textContent = "⚠ 無法讀取紀錄";
-      return;
-    }
+    if (!res.ok) throw new Error("Gist 連線失敗");
 
     const data = await res.json();
     const file = data.files[getFileName()];
@@ -213,7 +224,13 @@ async function loadMyFile() {
     document.getElementById("records").textContent = file.content;
 
   } catch (err) {
-    document.getElementById("records").textContent = "❌ 讀取失敗";
+    console.error(err);
+
+    document.getElementById("records").textContent = "";
+    document.getElementById("freePass").style.display = "block";
+    document.getElementById("btnCheckin").style.display = "none";
+    document.getElementById("status").innerText =
+      "⚠ 系統異常，自動放行";
   }
 }
 
@@ -275,13 +292,12 @@ async function updateMyFile() {
 
 window.onload = async () => {
   await initLiffOnce();
-  
+
   document.getElementById("btnCheckin").style.display =
     lineUserId ? "inline-block" : "none";
-  
+
   if (!lineUserId) {
     alert("請使用 LINE 開啟此頁面");
-    
     return;
   }
 
@@ -310,6 +326,11 @@ window.onload = async () => {
 <button id="btnCheckin" onclick="updateMyFile()">打卡</button>
 
 <p id="status"></p>
+
+<div id="freePass">
+  🎉 卡機壞了！<br>
+  今天大放送，不用打卡 😆
+</div>
 
 <h3>📄 我的紀錄</h3>
 <pre id="records"></pre>
