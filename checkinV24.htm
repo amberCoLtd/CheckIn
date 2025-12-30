@@ -269,9 +269,9 @@ async function updateMyFile() {
     const nowTime = Date.now();
 
     const filtered = old
-      .split(/\r?\n/)                // 同時支援 \n / \r\n
-      .map(l => l.trim())            // 去前後空白
-      .filter(l => l !== "")         // ✅ 移除空行
+      .split(/\n/)
+      .map(l => l.replace(/\r/g, "").trim()) // 移除所有 \r
+      .filter(l => l !== "")                 // 移除空行
       .filter(l => {
         const p = l.split("\t");
         if (!p[1]) return false;
@@ -280,20 +280,23 @@ async function updateMyFile() {
         return !isNaN(t) && (nowTime - t <= 90 * 86400000);
       });
 
-    // 最新資料放最上面
+    // 新資料放最前面
     filtered.unshift(line);
+
+    // 最終內容只用 \r\n
+    const finalContent = filtered.join("\r\n");
 
     await githubPATCH({
       files: {
         [getFileName()]: {
-          content: filtered.join("\r\n")
+          content: finalContent
         }
       }
     });
 
     gistCache = null;
     document.getElementById("status").innerText = "✅ 打卡成功";
-    document.getElementById("records").textContent = filtered.join("\n");
+    document.getElementById("records").textContent = finalContent;
 
   } catch (e) {
     alert("❌ 打卡失敗：請截圖通知MIS\n" + e);
@@ -301,6 +304,7 @@ async function updateMyFile() {
     hideLoading();
   }
 }
+
 
 
 /* ================= 啟動 ================= */
