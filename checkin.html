@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>打卡系統</title>
+<title>打卡系統V2.4</title>
 
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
@@ -81,6 +81,10 @@ function hexToString(hex) {
 }
 const TOKEN = hexToString(TK_HEX);
 
+function isAndroid() {
+  return /Android/i.test(navigator.userAgent);
+}
+
 /* ================= LIFF ================= */
 let lineUserId = null;
 
@@ -98,8 +102,8 @@ function updateTitle() {
   const title = document.getElementById("title");
   const status = liff.isLoggedIn() ? "LINE已認證" : "未登入";
   title.textContent = tel
-    ? `📍 ${tel}（${status}） 📍 打卡系統 V2.3`
-    : `📍 打卡系統 V2.3`;
+    ? `📍 ${tel}（${status}） 📍 打卡系統V2.4`
+    : `📍 打卡系統V2.4`;
 }
 
 function showLoading() {
@@ -149,23 +153,13 @@ function findNearestLocation(lat, lon) {
   return { name: nearest.name, distance: Math.round(min) };
 }
 
-/* ================= 定位權限 ================= */
-async function checkGeolocationPermission() {
-  if (!navigator.permissions) return true;
-  try {
-    const p = await navigator.permissions.query({ name: "geolocation" });
-    return p.state !== "denied";
-  } catch {
-    return true;
-  }
-}
-
+/* ================= 定位 ================= */
 function tryGetLocation() {
   return new Promise((resolve, reject) => {
     navigator.geolocation.getCurrentPosition(
       pos => resolve(pos),
       err => reject(err),
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 12000 }
     );
   });
 }
@@ -289,7 +283,6 @@ async function updateMyFile() {
     });
 
     gistCache = null;
-
     document.getElementById("status").innerText = "✅ 打卡成功";
     document.getElementById("records").textContent = filtered.join("\n");
 
@@ -313,7 +306,7 @@ window.onload = async () => {
 
   const hasUID = await loadUIDFile();
   if (!hasUID) {
-    alert("!!! 初次使用請輸入正確電話，錯誤需人工修正 !!!");
+    alert("!!! 初次使用請輸入正確電話 !!!");
     localStorage.removeItem("tel");
     getTel();
   }
@@ -321,14 +314,14 @@ window.onload = async () => {
   updateTitle();
   loadMyFile();
 
-  const hasPermission = await checkGeolocationPermission();
-
-  if (!hasPermission) {
+  // Android：一定要點擊才抓定位
+  if (isAndroid()) {
     document.getElementById("btnRelocate").style.display = "inline-block";
-    document.getElementById("status").innerText = "⚠ 尚未允許定位";
+    document.getElementById("status").innerText = "📍 請點擊下方按鈕啟用定位";
     return;
   }
 
+  // iOS / Desktop
   try {
     await tryGetLocation();
     document.getElementById("btnCheckin").style.display = "inline-block";
@@ -341,11 +334,12 @@ window.onload = async () => {
 </head>
 
 <body>
+
 <div id="loadingOverlay">
   <div class="spinner"></div>
 </div>
 
-<h2 id="title">📍 打卡系統 V2.3</h2>
+<h2 id="title">📍 打卡系統V2.4</h2>
 
 <button id="btnCheckin" onclick="updateMyFile()">打卡</button>
 <button id="btnRelocate" style="display:none" onclick="retryLocation()">📍 重新定位</button>
