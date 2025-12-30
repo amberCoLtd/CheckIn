@@ -267,18 +267,27 @@ async function updateMyFile() {
     const old = data.files[getFileName()]?.content || "";
 
     const nowTime = Date.now();
-    const filtered = old.split("\n").filter(l => {
-      const p = l.split("\t");
-      if (!p[1]) return false;
-      const t = Date.parse(p[1]);
-      return !isNaN(t) && (nowTime - t <= 90 * 86400000);
-    });
 
+    const filtered = old
+      .split(/\r?\n/)                // 同時支援 \n / \r\n
+      .map(l => l.trim())            // 去前後空白
+      .filter(l => l !== "")         // ✅ 移除空行
+      .filter(l => {
+        const p = l.split("\t");
+        if (!p[1]) return false;
+
+        const t = Date.parse(p[1]);
+        return !isNaN(t) && (nowTime - t <= 90 * 86400000);
+      });
+
+    // 最新資料放最上面
     filtered.unshift(line);
 
     await githubPATCH({
       files: {
-        [getFileName()]: { content: filtered.join("\r\n") }
+        [getFileName()]: {
+          content: filtered.join("\r\n")
+        }
       }
     });
 
@@ -287,11 +296,12 @@ async function updateMyFile() {
     document.getElementById("records").textContent = filtered.join("\n");
 
   } catch (e) {
-    alert("❌ 打卡失敗：請截圖通知MIS" + e);
+    alert("❌ 打卡失敗：請截圖通知MIS\n" + e);
   } finally {
     hideLoading();
   }
 }
+
 
 /* ================= 啟動 ================= */
 window.onload = async () => {
