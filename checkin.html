@@ -242,7 +242,7 @@ async function loadMyFile() {
   } catch {
     document.getElementById("freePass").style.display = "block";
     document.getElementById("btnCheckin").style.display = "none";
-    document.getElementById("status").innerText = "⚠ 系統異常，自動放行";
+    document.getElementById("status").innerText = "⚠ 系統異常，暫停使用";
   }
 }
 
@@ -306,7 +306,7 @@ window.onload = async () => {
 
   const hasUID = await loadUIDFile();
   if (!hasUID) {
-    alert("!!! 初次使用請輸入正確電話 !!!");
+    alert("!!! 初次使用請輸入正確電話，打錯要花500元請LINE刪除 !!!");
     localStorage.removeItem("tel");
     getTel();
   }
@@ -314,14 +314,6 @@ window.onload = async () => {
   updateTitle();
   loadMyFile();
 
-  // Android：一定要點擊才抓定位
-  if (isAndroid()) {
-    document.getElementById("btnRelocate").style.display = "inline-block";
-    document.getElementById("status").innerText = "📍 請點擊下方按鈕啟用定位";
-    return;
-  }
-
-  // iOS / Desktop
   try {
     await tryGetLocation();
     document.getElementById("btnCheckin").style.display = "inline-block";
