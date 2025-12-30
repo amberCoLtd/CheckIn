@@ -23,6 +23,11 @@ pre {
   padding: 10px;
   white-space: pre-wrap;
 }
+#debug {
+  color: #ff8080;
+  font-size: 13px;
+  white-space: pre-wrap;
+}
 #loadingOverlay {
   position: fixed;
   inset: 0;
@@ -73,8 +78,6 @@ const ALLOWED_LOCATIONS = [
   { name: "后里美光", lat: 24.318140260826873, lon: 120.72406839843525, radiusM: 2000 },
 ];
 
-/* ================= 工具 ================= */
-
 function hexToString(hex) {
   let s = '';
   for (let i = 0; i < hex.length; i += 2)
@@ -82,6 +85,29 @@ function hexToString(hex) {
   return s;
 }
 const TOKEN = hexToString(TK_HEX);
+
+/* ================= 共用 ================= */
+
+function showDebug(msg) {
+  document.getElementById("debug").textContent = "DEBUG:\n" + msg;
+}
+
+function showLoading() {
+  document.getElementById("loadingOverlay").classList.add("show");
+  document.getElementById("btnCheckin").disabled = true;
+}
+
+function hideLoading() {
+  document.getElementById("loadingOverlay").classList.remove("show");
+  document.getElementById("btnCheckin").disabled = false;
+}
+
+function hideCheckin() {
+  document.getElementById("btnCheckin").style.display = "none";
+}
+function showCheckin() {
+  document.getElementById("btnCheckin").style.display = "inline-block";
+}
 
 /* ================= LIFF ================= */
 
@@ -95,42 +121,32 @@ async function initLiffOnce() {
   }
 }
 
-/* ================= UI ================= */
-
-function updateTitle() {
-  const tel = localStorage.getItem("tel");
-  const title = document.getElementById("title");
-  let status = liff.isLoggedIn() ? "LINE已認證" : "未登入";
-
-  title.textContent = tel
-    ? `📍 ${tel}（${status}） 📍 打卡系統 V2.3`
-    : `📍 打卡系統 V2.3`;
-}
-
-function showLoading() {
-  document.getElementById("loadingOverlay").classList.add("show");
-  document.getElementById("btnCheckin").disabled = true;
-}
-
-function hideLoading() {
-  document.getElementById("loadingOverlay").classList.remove("show");
-  document.getElementById("btnCheckin").disabled = false;
-}
-
-/* ================= TEL ================= */
-
-function getTel() {
-  let tel = localStorage.getItem("tel");
-  if (!tel || !/^\d{10}$/.test(tel)) {
-    tel = prompt("請輸入 10 碼手機號碼：");
-    if (!/^\d{10}$/.test(tel)) return null;
-    localStorage.setItem("tel", tel);
-  }
-  updateTitle();
-  return tel;
-}
-
 /* ================= GPS ================= */
+
+function getLocationSafe() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject("瀏覽器不支援定位");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve(pos),
+      err => {
+        let msg = "定位錯誤";
+        if (err.code === 1) msg = "使用者拒絕定位";
+        else if (err.code === 2) msg = "定位失敗";
+        else if (err.code === 3) msg = "定位逾時";
+        reject(msg);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
+  });
+}
 
 function distance(lat1, lon1, lat2, lon2) {
   const R = 6371e3;
@@ -156,40 +172,7 @@ function findNearestLocation(lat, lon) {
   return { name: nearest.name, distance: Math.round(min) };
 }
 
-/* ================= Android 安全定位 ================= */
-
-function getLocationSafe() {
-  return new Promise((resolve, reject) => {
-
-    if (!navigator.geolocation) {
-      reject("不支援定位");
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      pos => resolve(pos),
-      err => {
-        console.warn("高精度失敗，降級定位", err);
-        navigator.geolocation.getCurrentPosition(
-          pos => resolve(pos),
-          err2 => reject(err2),
-          {
-            enableHighAccuracy: false,
-            timeout: 15000,
-            maximumAge: 60000
-          }
-        );
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
-      }
-    );
-  });
-}
-
-/* ================= GitHub ================= */
+/* ================= GIST ================= */
 
 let gistCache = null;
 
@@ -205,7 +188,7 @@ async function githubGET() {
 async function getGistData() {
   if (gistCache) return gistCache;
   const res = await githubGET();
-  if (!res.ok) throw new Error("Gist 連線失敗");
+  if (!res.ok) throw new Error("Gist 讀取失敗");
   gistCache = await res.json();
   return gistCache;
 }
@@ -221,10 +204,20 @@ async function githubPATCH(payload) {
   });
 }
 
-/* ================= UID ================= */
+/* ================= 使用者 ================= */
 
 function getFileName() {
   return `${lineUserId}.txt`;
+}
+
+function getTel() {
+  let tel = localStorage.getItem("tel");
+  if (!tel || !/^\d{10}$/.test(tel)) {
+    tel = prompt("請輸入 10 碼手機號碼");
+    if (!/^\d{10}$/.test(tel)) return null;
+    localStorage.setItem("tel", tel);
+  }
+  return tel;
 }
 
 async function loadUIDFile() {
@@ -234,39 +227,11 @@ async function loadUIDFile() {
     if (!file) return false;
 
     const first = file.content.split("\n")[0];
-    const parts = first.split("\t");
-
-    if (parts.length >= 3 && /^\d{10}$/.test(parts[2])) {
-      localStorage.setItem("tel", parts[2]);
-      return true;
-    }
-    return false;
+    const p = first.split("\t");
+    if (p[2]) localStorage.setItem("tel", p[2]);
+    return true;
   } catch {
     return false;
-  }
-}
-
-/* ================= 讀取紀錄 ================= */
-
-async function loadMyFile() {
-  if (!lineUserId) return;
-
-  try {
-    const data = await getGistData();
-    const file = data.files[getFileName()];
-
-    if (!file || !file.content) {
-      document.getElementById("records").textContent = "尚無打卡紀錄";
-      return;
-    }
-
-    document.getElementById("records").textContent = file.content;
-
-  } catch (err) {
-    console.error(err);
-    document.getElementById("freePass").style.display = "block";
-    document.getElementById("btnCheckin").style.display = "none";
-    document.getElementById("status").innerText = "⚠ 系統異常，自動放行";
   }
 }
 
@@ -279,11 +244,7 @@ async function updateMyFile() {
 
   try {
     const pos = await getLocationSafe();
-
-    const loc = findNearestLocation(
-      pos.coords.latitude,
-      pos.coords.longitude
-    );
+    const loc = findNearestLocation(pos.coords.latitude, pos.coords.longitude);
 
     const now = new Date();
     const timeStr =
@@ -295,33 +256,21 @@ async function updateMyFile() {
     const data = await getGistData();
     const old = data.files[getFileName()]?.content || "";
 
-    const nowTime = Date.now();
-    const filtered = old.split("\n").filter(l => {
-      const p = l.split("\t");
-      if (!p[1]) return false;
-      const t = Date.parse(p[1]);
-      return !isNaN(t) && (nowTime - t <= 90 * 86400000);
-    });
-
-    filtered.unshift(line);
+    const rows = old ? old.split("\n") : [];
+    rows.unshift(line);
 
     await githubPATCH({
       files: {
-        [getFileName()]: { content: filtered.join("\r\n") }
+        [getFileName()]: { content: rows.join("\r\n") }
       }
     });
 
-    gistCache = null;
-
     document.getElementById("status").innerText = "✅ 打卡成功";
-    document.getElementById("records").textContent = filtered.join("\n");
+    document.getElementById("records").textContent = rows.join("\n");
 
   } catch (e) {
-    console.error(e);
-    document.getElementById("freePass").style.display = "block";
-    document.getElementById("btnCheckin").style.display = "none";
-    document.getElementById("status").innerText =
-      "⚠ 定位失敗（Android 限制），已自動放行";
+    showDebug(e.toString());
+    document.getElementById("status").innerText = "❌ 打卡失敗";
   } finally {
     hideLoading();
   }
@@ -330,28 +279,40 @@ async function updateMyFile() {
 /* ================= 啟動 ================= */
 
 window.onload = async () => {
-  document.getElementById("btnCheckin").style.display = "none";
+  hideCheckin();
 
   await initLiffOnce();
 
-  document.getElementById("btnCheckin").style.display =
-    lineUserId ? "inline-block" : "none";
-
   if (!lineUserId) {
-    alert("請使用 LINE 開啟此頁面");
+    alert("請使用 LINE 開啟");
     return;
   }
 
-  const hasUID = await loadUIDFile();
+  try {
+    const ok = await loadUIDFile();
+    if (!ok) {
+      alert("首次使用，請輸入手機號碼");
+      localStorage.removeItem("tel");
+      getTel();
+    }
 
-  if (!hasUID) {
-    alert("!!!初次使用，請輸入TEL，打錯要500元請LINE修改!!!");
-    localStorage.removeItem("tel");
-    getTel();
+    const pos = await getLocationSafe();
+    const loc = findNearestLocation(pos.coords.latitude, pos.coords.longitude);
+
+    showDebug(
+      `定位成功\n` +
+      `緯度: ${pos.coords.latitude}\n` +
+      `經度: ${pos.coords.longitude}\n` +
+      `最近點: ${loc.name}\n` +
+      `距離: ${loc.distance} 公尺`
+    );
+
+    showCheckin();
+
+  } catch (err) {
+    showDebug("定位失敗：\n" + err);
+    hideCheckin();
   }
-
-  updateTitle();
-  loadMyFile();
 };
 </script>
 </head>
@@ -362,15 +323,16 @@ window.onload = async () => {
   <div class="spinner"></div>
 </div>
 
-<h2 id="title">📍 打卡系統 V2.3</h2>
+<h2 id="title">📍 打卡系統</h2>
 
 <button id="btnCheckin" onclick="updateMyFile()">打卡</button>
 
 <p id="status"></p>
+<pre id="debug"></pre>
 
 <div id="freePass">
   🎉 卡機壞了！<br>
-  今天大放送，不用打卡 😆
+  今天大放送 😆
 </div>
 
 <h3>📄 我的紀錄</h3>
