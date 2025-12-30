@@ -46,7 +46,6 @@ pre {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
-
 #freePass {
   display: none;
   margin-top: 40px;
@@ -104,8 +103,8 @@ function updateTitle() {
   let status = liff.isLoggedIn() ? "LINE已認證" : "未登入";
 
   title.textContent = tel
-    ? `📍 ${tel}（${status}） 📍 打卡系統 V2.2`
-    : `📍 打卡系統 V2.2`;
+    ? `📍 ${tel}（${status}） 📍 打卡系統 V2.3`
+    : `📍 打卡系統 V2.3`;
 }
 
 function showLoading() {
@@ -157,6 +156,39 @@ function findNearestLocation(lat, lon) {
   return { name: nearest.name, distance: Math.round(min) };
 }
 
+/* ================= Android 安全定位 ================= */
+
+function getLocationSafe() {
+  return new Promise((resolve, reject) => {
+
+    if (!navigator.geolocation) {
+      reject("不支援定位");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve(pos),
+      err => {
+        console.warn("高精度失敗，降級定位", err);
+        navigator.geolocation.getCurrentPosition(
+          pos => resolve(pos),
+          err2 => reject(err2),
+          {
+            enableHighAccuracy: false,
+            timeout: 15000,
+            maximumAge: 60000
+          }
+        );
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
+  });
+}
+
 /* ================= GitHub ================= */
 
 let gistCache = null;
@@ -172,10 +204,8 @@ async function githubGET() {
 
 async function getGistData() {
   if (gistCache) return gistCache;
-
   const res = await githubGET();
   if (!res.ok) throw new Error("Gist 連線失敗");
-
   gistCache = await res.json();
   return gistCache;
 }
@@ -234,7 +264,6 @@ async function loadMyFile() {
 
   } catch (err) {
     console.error(err);
-    document.getElementById("records").textContent = "";
     document.getElementById("freePass").style.display = "block";
     document.getElementById("btnCheckin").style.display = "none";
     document.getElementById("status").innerText = "⚠ 系統異常，自動放行";
@@ -249,16 +278,14 @@ async function updateMyFile() {
   showLoading();
 
   try {
-    const pos = await new Promise((res, rej) =>
-      navigator.geolocation.getCurrentPosition(res, rej, {
-        enableHighAccuracy: true,
-        timeout: 15000
-      })
+    const pos = await getLocationSafe();
+
+    const loc = findNearestLocation(
+      pos.coords.latitude,
+      pos.coords.longitude
     );
 
-    const loc = findNearestLocation(pos.coords.latitude, pos.coords.longitude);
     const now = new Date();
-
     const timeStr =
       `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')} ` +
       `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
@@ -284,13 +311,17 @@ async function updateMyFile() {
       }
     });
 
-    gistCache = null; // 清快取
+    gistCache = null;
 
     document.getElementById("status").innerText = "✅ 打卡成功";
     document.getElementById("records").textContent = filtered.join("\n");
 
   } catch (e) {
-    alert("❌ 打卡失敗：" + e);
+    console.error(e);
+    document.getElementById("freePass").style.display = "block";
+    document.getElementById("btnCheckin").style.display = "none";
+    document.getElementById("status").innerText =
+      "⚠ 定位失敗（Android 限制），已自動放行";
   } finally {
     hideLoading();
   }
@@ -314,7 +345,7 @@ window.onload = async () => {
   const hasUID = await loadUIDFile();
 
   if (!hasUID) {
-    alert("!!!初次使用，請輸入TEL，注意要打對，打錯要500元請LINE修改!!!");
+    alert("!!!初次使用，請輸入TEL，打錯要500元請LINE修改!!!");
     localStorage.removeItem("tel");
     getTel();
   }
@@ -331,7 +362,7 @@ window.onload = async () => {
   <div class="spinner"></div>
 </div>
 
-<h2 id="title">📍 打卡系統 V2.2</h2>
+<h2 id="title">📍 打卡系統 V2.3</h2>
 
 <button id="btnCheckin" onclick="updateMyFile()">打卡</button>
 
