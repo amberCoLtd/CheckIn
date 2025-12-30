@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>打卡系統V2.44</title>
+
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+<style>
+body {
+  font-family: sans-serif;
+  padding: 20px;
+}
+button {
+  padding: 10px 16px;
+  font-size: 16px;
+  margin-right: 8px;
+}
+pre {
+  background: #111;
+  color: #0f0;
+  padding: 10px;
+  white-space: pre-wrap;
+}
+#loadingOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+#loadingOverlay.show {
+  display: flex;
+}
+.spinner {
+  width: 56px;
+  height: 56px;
+  border: 6px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+#freePass {
+  display: none;
+  margin-top: 40px;
+  padding: 20px;
+  font-size: 22px;
+  text-align: center;
+  background: #fff3cd;
+  color: #b02a37;
+  border: 2px dashed #ff6b6b;
+  border-radius: 12px;
+  font-weight: bold;
+}
+</style>
+
+<script>
+/* ================= 基本設定 ================= */
+const GIST_ID = "128158194ad773c072ca111b84286cfb";
+const TK_HEX = "6768705F4A3052654D6C75636C6B614B785A63494C4379316C5077754458486C5150313955304361";
+const LIFF_ID = "2008796195-ptiXdSsI";
+
+const ALLOWED_LOCATIONS = [
+  { name: "台北公司", lat: 24.986794380363925, lon: 121.5336918999006, radiusM: 200 },
+  { name: "台中辦公室", lat: 24.310777911896015, lon: 120.72138183688088, radiusM: 2000 },
+  { name: "后里美光", lat: 24.318140260826873, lon: 120.72406839843525, radiusM: 2000 },
+];
+
+/* ================= 工具 ================= */
+function hexToString(hex) {
+  let s = '';
+  for (let i = 0; i < hex.length; i += 2)
+    s += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+  return s;
+}
+const TOKEN = hexToString(TK_HEX);
+
+function isAndroid() {
+  return /Android/i.test(navigator.userAgent);
+}
+
+/* ================= LIFF ================= */
+let lineUserId = null;
+
+async function initLiffOnce() {
+  await liff.init({ liffId: LIFF_ID });
+  if (liff.isLoggedIn()) {
+    const profile = await liff.getProfile();
+    lineUserId = profile.userId;
+  }
+}
+
+/* ================= UI ================= */
+function updateTitle() {
+  const tel = localStorage.getItem("tel");
+  const title = document.getElementById("title");
+  const status = liff.isLoggedIn() ? "LINE已認證" : "未登入";
+  title.textContent = tel
+    ? `📍 ${tel}（${status}） 📍 打卡系統V2.44`
+    : `📍 打卡系統V2.44`;
+}
+
+function showLoading() {
+  document.getElementById("loadingOverlay").classList.add("show");
+  document.getElementById("btnCheckin").disabled = true;
+}
+
+function hideLoading() {
+  document.getElementById("loadingOverlay").classList.remove("show");
+  document.getElementById("btnCheckin").disabled = false;
+}
+
+/* ================= TEL ================= */
+function getTel() {
+  let tel = localStorage.getItem("tel");
+  if (!tel || !/^\d{10}$/.test(tel)) {
+    tel = prompt("請輸入 10 碼手機號碼：");
+    if (!/^\d{10}$/.test(tel)) return null;
+    localStorage.setItem("tel", tel);
+  }
+  updateTitle();
+  return tel;
+}
+
+/* ================= GPS ================= */
+function distance(lat1, lon1, lat2, lon2) {
+  const R = 6371e3;
+  const toRad = d => d * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  return 2 * R * Math.asin(Math.sqrt(
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLon / 2) ** 2
+  ));
+}
+
+function findNearestLocation(lat, lon) {
+  let nearest = null, min = Infinity;
+  for (const l of ALLOWED_LOCATIONS) {
+    const d = distance(lat, lon, l.lat, l.lon);
+    if (d < min) {
+      min = d;
+      nearest = l;
+    }
+  }
+  return { name: nearest.name, distance: Math.round(min) };
+}
+
+/* ================= 定位 ================= */
+function tryGetLocation() {
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve(pos),
+      err => reject(err),
+      { enableHighAccuracy: true, timeout: 12000 }
+    );
+  });
+}
+
+async function retryLocation() {
+  document.getElementById("btnRelocate").style.display = "none";
+  try {
+    await tryGetLocation();
+    document.getElementById("status").innerText = "✅ 定位成功，請打卡";
+    document.getElementById("btnCheckin").style.display = "inline-block";
+  } catch {
+    document.getElementById("status").innerText = "❌ 尚未開啟定位權限";
+    document.getElementById("btnRelocate").style.display = "inline-block";
+  }
+}
+
+/* ================= GitHub ================= */
+let gistCache = null;
+
+async function githubGET() {
+  return fetch(`https://api.github.com/gists/${GIST_ID}`, {
+    headers: {
+      "Authorization": `token ${TOKEN}`,
+      "Accept": "application/vnd.github+json"
+    }
+  });
+}
+
+async function getGistData() {
+  if (gistCache) return gistCache;
+  const res = await githubGET();
+  if (!res.ok) throw new Error("Gist 連線失敗");
+  gistCache = await res.json();
+  return gistCache;
+}
+
+async function githubPATCH(payload) {
+  return fetch(`https://api.github.com/gists/${GIST_ID}`, {
+    method: "PATCH",
+    headers: {
+      "Authorization": `token ${TOKEN}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+/* ================= UID ================= */
+function getFileName() {
+  return `${lineUserId}.txt`;
+}
+
+async function loadUIDFile() {
+  try {
+    const data = await getGistData();
+    const file = data.files[getFileName()];
+    if (!file) return false;
+    const first = file.content.split("\n")[0];
+    const parts = first.split("\t");
+    if (parts.length >= 3 && /^\d{10}$/.test(parts[2])) {
+      localStorage.setItem("tel", parts[2]);
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+/* ================= 讀取紀錄 ================= */
+async function loadMyFile() {
+  try {
+    const data = await getGistData();
+    const file = data.files[getFileName()];
+    if (!file) {
+      document.getElementById("records").textContent = "尚無打卡紀錄";
+      return;
+    }
+    document.getElementById("records").textContent = file.content;
+  } catch {
+    document.getElementById("freePass").style.display = "block";
+    document.getElementById("btnCheckin").style.display = "none";
+    document.getElementById("status").innerText = "⚠ 系統異常，暫停使用";
+  }
+}
+
+/* ================= 打卡 ================= */
+async function updateMyFile() {
+  if (!getTel()) return;
+
+  showLoading();
+
+  try {
+    const pos = await tryGetLocation();
+    const loc = findNearestLocation(pos.coords.latitude, pos.coords.longitude);
+
+    const now = new Date();
+    const timeStr =
+      `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ` +
+      `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+
+    const line = `050\t${timeStr}\t${getTel()}\t${loc.name} (${loc.distance}m)`;
+
+    const data = await getGistData();
+    const old = data.files[getFileName()]?.content || "";
+
+    const nowTime = Date.now();
+    const filtered = old.split("\n").filter(l => {
+      const p = l.split("\t");
+      if (!p[1]) return false;
+      const t = Date.parse(p[1]);
+      return !isNaN(t) && (nowTime - t <= 90 * 86400000);
+    });
+
+    filtered.unshift(line);
+
+    await githubPATCH({
+      files: {
+        [getFileName()]: { content: filtered.join("\r\n") }
+      }
+    });
+
+    gistCache = null;
+    document.getElementById("status").innerText = "✅ 打卡成功";
+    document.getElementById("records").textContent = filtered.join("\n");
+
+  } catch (e) {
+    alert("❌ 打卡失敗：請截圖通知MIS" + e);
+  } finally {
+    hideLoading();
+  }
+}
+
+/* ================= 啟動 ================= */
+window.onload = async () => {
+  document.getElementById("btnCheckin").style.display = "none";
+
+  await initLiffOnce();
+
+  if (!lineUserId) {
+    alert("請使用 LINE 開啟此頁面");
+    return;
+  }
+
+  const hasUID = await loadUIDFile();
+  if (!hasUID) {
+    alert("!!! 初次使用請輸入正確電話，打錯要花500元請LINE刪除 !!!");
+    localStorage.removeItem("tel");
+    getTel();
+  }
+
+  updateTitle();
+  loadMyFile();
+
+  try {
+    await tryGetLocation();
+    document.getElementById("btnCheckin").style.display = "inline-block";
+  } catch {
+    document.getElementById("btnRelocate").style.display = "inline-block";
+    document.getElementById("status").innerText = "⚠ 無法取得定位請開啟權限";
+  }
+};
+</script>
+</head>
+
+<body>
+
+<div id="loadingOverlay">
+  <div class="spinner"></div>
+</div>
+
+<h2 id="title">📍 打卡系統V2.44</h2>
+
+<button id="btnCheckin" onclick="updateMyFile()">打卡</button>
+<button id="btnRelocate" style="display:none" onclick="retryLocation()">📍 重新定位</button>
+
+<p id="status"></p>
+
+<div id="freePass">
+  🎉 卡機壞了！<br>今天大放送，不用打卡 😆
+</div>
+
+<h3>📄 我的紀錄</h3>
+<pre id="records"></pre>
+
+</body>
+</html>
