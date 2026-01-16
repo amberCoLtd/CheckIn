@@ -174,6 +174,7 @@ async function retryLocation() {
   } catch {
     document.getElementById("status").innerText = "❌ 尚未開啟定位權限";
     document.getElementById("btnRelocate").style.display = "inline-block";
+    Update();
   }
 }
 
@@ -248,55 +249,78 @@ async function loadMyFile() {
 }
 
 /* ================= 打卡 ================= */
-async function updateMyFile() {
+async function getLocationSafe() {
+  try {
+    const pos = await tryGetLocation();
+    const loc = findNearestLocation(
+      pos.coords.latitude,
+      pos.coords.longitude
+    );
+    return {
+      ok: true,
+      text: `${loc.name} (${loc.distance}m)`
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      text: "用戶拒絕提供"
+    };
+  }
+}
+
+async function Update() {
   if (!getTel()) return;
 
   showLoading();
 
   try {
-    const pos = await tryGetLocation();
-    const loc = findNearestLocation(pos.coords.latitude, pos.coords.longitude);
+    // ① 嘗試取得定位（不會 throw）
+    const locResult = await getLocationSafe();
 
+    // ② 組時間
     const now = new Date();
     const timeStr =
       `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ` +
       `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
 
-    const line = `050\t${timeStr}\t${getTel()}\t${loc.name} (${loc.distance}m)`;
+    // ③ 組紀錄行
+    const line =
+      `050\t${timeStr}\t${getTel()}\t${locResult.text}`;
 
+    // ④ 讀舊資料
     const data = await getGistData();
     const old = data.files[getFileName()]?.content || "";
-
     const nowTime = Date.now();
 
     const filtered = old
       .split(/\n/)
-      .map(l => l.replace(/\r/g, "").trim()) // 移除所有 \r
-      .filter(l => l !== "")                 // 移除空行
+      .map(l => l.replace(/\r/g, "").trim())
+      .filter(l => l !== "")
       .filter(l => {
         const p = l.split("\t");
         if (!p[1]) return false;
-
         const t = Date.parse(p[1]);
         return !isNaN(t) && (nowTime - t <= 90 * 86400000);
       });
 
-    // 新資料放最前面
     filtered.unshift(line);
-
-    // 最終內容只用 \r\n
     const finalContent = filtered.join("\r\n");
 
+    // ⑤ 寫回 Gist
     await githubPATCH({
       files: {
-        [getFileName()]: {
-          content: finalContent
-        }
+        [getFileName()]: { content: finalContent }
       }
     });
 
     gistCache = null;
-    document.getElementById("status").innerText = "✅ 打卡成功";
+
+    // ⑥ UI 回饋
+    document.getElementById("status").innerText =
+      locResult.ok
+        ? "✅ 打卡成功"
+        : "⚠ 打卡成功（未提供定位）";
+
     document.getElementById("records").textContent = finalContent;
 
   } catch (e) {
@@ -305,7 +329,6 @@ async function updateMyFile() {
     hideLoading();
   }
 }
-
 
 
 /* ================= 啟動 ================= */
@@ -348,8 +371,8 @@ window.onload = async () => {
 
 <h2 id="title">📍 打卡系統V2.44</h2>
 
-<button id="btnCheckin" onclick="updateMyFile()">打卡</button>
-<button id="btnRelocate" style="display:none" onclick="retryLocation()">📍 重新定位</button>
+<button id="btnCheckin" onclick="Update()">打卡</button>
+<button id="btnRelocate" style="display:none" onclick="retryLocation()">📍 定位權限錯誤</button>
 
 <p id="status"></p>
 
