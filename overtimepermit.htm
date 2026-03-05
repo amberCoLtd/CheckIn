@@ -94,7 +94,7 @@
         function notifyLeave(line, status) {
             let cols = line.split('\t');
             const email = new URLSearchParams(window.location.search).get("email");
-            const msg = `${email} ${status} ${line}<br/>\n\n詳情:https://ambercoltd.github.io/CheckIn/overtimepermit.htm`;
+            const msg = `${email} ${status} ${line}<br/>\n\n詳情:<a href='https://ambercoltd.github.io/CheckIn/overtimepermit.htm'>https://ambercoltd.github.io/CheckIn/overtimepermit.htm</a>`;
             // ✅ 若是 eason 自己，就不發送通知
             if (email === "eason@amberco.com.tw") return;
             
@@ -139,6 +139,7 @@
     </table>
 </body>
 </html>
+
 
 
 
