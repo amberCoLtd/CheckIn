@@ -91,7 +91,7 @@
             let master = document.getElementById("master").value;
             const reviewLink = `https://ambercoltd.github.io/CheckIn/overtimepermit.htm?email=${master}`;
             const msg = `姓名: ${name}<br/>\n加班: ${leaveType}<br/>\n原因: ${reason}<br/>\n開始: ${startTime}<br/>\n結束: ${endTime}<br/>\n\n` +
-                        `前往審核:${reviewLink}<br/>\n\n` + document.getElementById("status").innerHTML.replace("<br>","<br/>\n");
+                        `前往審核:<a href='${reviewLink}'>${reviewLink}</a><br/>\n\n` + document.getElementById("status").innerHTML.replace("<br>","<br/>\n");
         
             //發送 Email
             let formData = new FormData();
@@ -228,6 +228,7 @@
     <p id="status" style="white-space: nowrap; overflow-x: scroll; display: block; width: 100%;"></p>
 </body>
 </html>
+
 
 
 
