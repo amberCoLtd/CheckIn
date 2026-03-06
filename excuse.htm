@@ -49,9 +49,9 @@
                 });
                 
                 if (recentLeaves.length > 0) {
-                    document.getElementById("status").innerHTML = "最近一個月請假紀錄:<br>" + recentLeaves.join('<br>');
+                    document.getElementById("exdata").innerHTML = "最近一個月請假紀錄:<br>" + recentLeaves.join('<br>');
                 } else {
-                    document.getElementById("status").innerText = "無最近請假紀錄。";
+                    document.getElementById("exdata").innerText = "無最近請假紀錄。";
                 }
             }).catch(error => {
                 console.error('Error fetching Gist:', error);
@@ -91,7 +91,7 @@
         function notifyLeave(content, name, startTime, endTime, leaveType, master, reason) {
             const reviewLink = `https://ambercoltd.github.io/CheckIn/excusepermit.htm?email=${encodeURIComponent(master)}`;
             const msg = `姓名: ${name}<br/>\n假別: ${leaveType}<br/>\n原因: ${reason}<br/>\n開始: ${startTime}<br/>\n結束: ${endTime}<br/>\n\n` +
-                        `前往審核:${reviewLink}<br/>\n\n` + document.getElementById("status").innerHTML.replace(/<br\s*\/?>/gi, "<br/>\n");
+                        `前往審核:${reviewLink}<br/>\n\n` + document.getElementById("exdata").innerHTML.replace(/<br\s*\/?>/gi, "<br/>\n");
         
 			//發送 Email
             let formData = new FormData();
@@ -212,8 +212,10 @@
     <br>
     <button id="submitButton" onclick="submitLeave()">送出請假申請</button>
     <p id="status" style="white-space: nowrap; overflow-x: scroll; display: block; width: 100%;"></p>
+    <p id="exdata" style="white-space: nowrap; overflow-x: scroll; display: block; width: 100%;"></p>
 </body>
 </html>
+
 
 
 
