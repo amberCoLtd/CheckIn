@@ -149,6 +149,7 @@
         }
         
          window.onload = function () {
+			askForName();
             let name = localStorage.getItem('name');
             if (name) {
                 fetchLeaveRecords(name);
@@ -215,6 +216,7 @@
     <p id="exdata" style="white-space: nowrap; overflow-x: scroll; display: block; width: 100%;"></p>
 </body>
 </html>
+
 
 
 
