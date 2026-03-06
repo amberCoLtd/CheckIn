@@ -21,7 +21,7 @@
         fetchOptions.headers = {"Authorization": `token ${TK}`,"Accept": "application/vnd.github+json"};
         function askForName() {
             let name = localStorage.getItem('name');
-            if (!name) {
+            if (!name || name == null || name == "null") {
                 name = prompt("請輸入您的名字：");
                 if (name && name.trim() !== "") {
                     localStorage.setItem('name', name);
@@ -214,6 +214,7 @@
     <p id="status" style="white-space: nowrap; overflow-x: scroll; display: block; width: 100%;"></p>
 </body>
 </html>
+
 
 
 
