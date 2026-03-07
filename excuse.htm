@@ -30,6 +30,9 @@
                     return null;
                 }
             }
+			else{
+                localStorage.setItem('name', name);
+			}
             return name;
         }
         function fetchLeaveRecords(name) {
@@ -218,6 +221,7 @@
     <p id="exdata" style="white-space: nowrap; overflow-x: scroll; display: block; width: 100%;"></p>
 </body>
 </html>
+
 
 
 
