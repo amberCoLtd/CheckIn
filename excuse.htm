@@ -36,7 +36,7 @@
             return name;
         }
         function fetchLeaveRecords(name) {
-            fetch(`https://api.github.com/gists/${GIST_ID}`,fetchOptions)
+            fetch(`https://api.github.com/gists/${GIST_ID}?t=${Date.now()}`,fetchOptions)
             .then(response => response.json())
             .then(data => {
                 let content = data.files[GIST_FILE_NAME]?.content || "";
@@ -148,6 +148,7 @@
             })
             .then(lines => {
               document.getElementById("status").innerHTML = `✅ 請假申請已提交！請自行與主管確認是否核准！<br><br>最近一個月請假紀錄:<br>` + lines.join('<br>');
+              fetchLeaveRecords(name);
             });
         }
         
@@ -221,6 +222,7 @@
     <p id="exdata" style="white-space: nowrap; overflow-x: scroll; display: block; width: 100%;"></p>
 </body>
 </html>
+
 
 
 
