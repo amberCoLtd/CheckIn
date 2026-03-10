@@ -35,7 +35,7 @@
             return name;
         }
         function fetchLeaveRecords(name) {
-            fetch(`https://api.github.com/gists/${GIST_ID}`,fetchOptions)
+            fetch(`https://api.github.com/gists/${GIST_ID}?t=${Date.now()}`,fetchOptions)
             .then(response => response.json())
             .then(data => {
                 let content = data.files[GIST_FILE_NAME]?.content || "";
@@ -157,6 +157,7 @@
             })
             .then(oneMonthRecords => {
               document.getElementById("status").innerHTML = `✅ 加班申請已提交！通知已發送！<br><br>最近一個月加班紀錄:<br>` + content + "<br>" + oneMonthRecords.join('<br>');
+              fetchLeaveRecords(name);
             });
         }
         
@@ -232,6 +233,7 @@
     <p id="status" style="white-space: nowrap; overflow-x: scroll; display: block; width: 100%;"></p>
 </body>
 </html>
+
 
 
 
