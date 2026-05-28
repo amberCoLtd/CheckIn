@@ -1,257 +1,564 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh-TW">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Amber加班系統</title>
-    <script>
-        const TK_HEX = '6768705F4A3052654D6C75636C6B614B785A63494C4379316C5077754458486C5150313955304361';
-        function hexToString(hex) {
-            let str = '';
-            for (let i = 0; i < hex.length; i += 2) {
-                str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
-            }
-            return str;
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<title>Amber加班系統</title>
+
+<style type="text/css">
+
+body{
+    font-family: Arial, Helvetica, sans-serif;
+    font-size:16px;
+    margin:15px;
+    line-height:1.8;
+}
+
+h2{
+    margin-bottom:20px;
+}
+
+label{
+    display:block;
+    margin-top:10px;
+}
+
+input,
+select,
+button{
+    width:100%;
+    max-width:400px;
+    padding:10px;
+    font-size:16px;
+    box-sizing:border-box;
+}
+
+button{
+    margin-top:20px;
+    cursor:pointer;
+}
+
+#status{
+    margin-top:20px;
+    white-space:normal;
+    word-break:break-all;
+}
+
+</style>
+
+<script type="text/javascript">
+
+var TK_HEX = '6768705F4A3052654D6C75636C6B614B785A63494C4379316C5077754458486C5150313955304361';
+
+function hexToString(hex) {
+
+    var str = '';
+    var i;
+
+    for (i = 0; i < hex.length; i += 2) {
+        str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+    }
+
+    return str;
+}
+
+var TK = hexToString(TK_HEX);
+
+var GIST_ID = 'e5a30f0ae2615a23185d4fbc52767adc';
+
+var GIST_FILE_NAME = 'overtime.txt';
+
+function askForName() {
+
+    var name = localStorage.getItem('name');
+
+    if (!name || name === 'null') {
+
+        name = prompt('請輸入您的名字：', '');
+
+        if (name && name !== '') {
+            localStorage.setItem('name', name);
+        } else {
+            document.getElementById('status').innerHTML =
+                '請輸入正確的名字';
+            return null;
         }
-        const TK = hexToString(TK_HEX);
-        const GIST_ID = 'e5a30f0ae2615a23185d4fbc52767adc';
-        const GIST_FILE_NAME = 'overtime.txt';
-        const fetchOptions = {};
-        fetchOptions.headers = {"Authorization": `token ${TK}`,"Accept": "application/vnd.github+json"};
-        function askForName() {
-            let name = localStorage.getItem('name');
-            if (!name || name == null || name == "null") {
-                name = prompt("請輸入您的名字：");
-                if (name && name.trim() !== "") {
-                    localStorage.setItem('name', name);
-                } else {
-                    document.getElementById("status").innerText = "請輸入正確的名字。";
-                    return null;
+    }
+
+    return name;
+}
+
+function fetchLeaveRecords(name) {
+
+    var xhr = new XMLHttpRequest();
+
+    xhr.onreadystatechange = function () {
+
+        if (xhr.readyState === 4 && xhr.status === 200) {
+
+            var data = JSON.parse(xhr.responseText);
+
+            var content = '';
+
+            if (data.files && data.files[GIST_FILE_NAME]) {
+                content = data.files[GIST_FILE_NAME].content;
+            }
+
+            var lines = content.split('\n');
+
+            var output = '';
+
+            var i;
+
+            for (i = 0; i < lines.length; i++) {
+
+                var parts = lines[i].split('\t');
+
+                if (parts.length >= 3 && parts[0] === name) {
+                    output += lines[i] + '<br />';
                 }
             }
-            else{
-                localStorage.setItem('name', name);
-			}
-            return name;
-        }
-        function fetchLeaveRecords(name) {
-            fetch(`https://api.github.com/gists/${GIST_ID}?t=${Date.now()}`,fetchOptions)
-            .then(response => response.json())
-            .then(data => {
-                let content = data.files[GIST_FILE_NAME]?.content || "";
-                let lines = content.split('\n');
-                const oneMonthAgo = new Date();
-                oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-                
-                let recentLeaves = lines.filter(line => {
-                    const parts = line.split('\t');
-                    if (parts.length < 3) return false;
-                    const recordTime = new Date(parts[1]);
-                    return recordTime >= oneMonthAgo && parts[0] === name;
-                });
-                
-                if (recentLeaves.length > 0) {
-                    document.getElementById("status").innerHTML = "最近一個月加班紀錄:<br>" + recentLeaves.join('<br>');
-                } else {
-                    document.getElementById("status").innerText = name+"無最近加班紀錄。";
-                }
-            }).catch(error => {
-                console.error('Error fetching Gist:', error);
-            });
-        }
-       function submitLeave() {
-            let button = document.getElementById("submitButton");
-            button.disabled = true;
-            button.innerText = "申請中...";
-        
-            let name = askForName();
-            if (name === null) return;
-        
-            let startDate = document.getElementById("startDate").value;
-            let endDate = document.getElementById("endDate").value;
-            let startTime = document.getElementById("startTime").value;
-            let endTime = document.getElementById("endTime").value;
-            let leaveType = document.getElementById("leaveType").value;
-            let reason = document.getElementById("reason").value;
-            let master = document.getElementById("master").value;
-        
-            if (!startDate || !endDate || !startTime || !endTime || !leaveType || !reason) {
-                document.getElementById("status").innerText = "請完整填寫所有欄位。";
-                button.disabled = false;
-                button.innerText = "送出加班申請";
-                return;
+
+            if (output === '') {
+                output = name + ' 無最近加班紀錄';
             }
-        
-            const startDateTime = `${startDate}T${startTime}`;
-            const endDateTime = `${endDate}T${endTime}`;
-            const content = `${name}\t${startDateTime}\t${endDateTime}\t${leaveType}\t${reason}\t${master}\r\n`;
-        
-            notifyLeave(content, name, startDateTime, endDateTime, leaveType, reason);
+
+            document.getElementById('status').innerHTML =
+                '最近一個月加班紀錄：<br />' + output;
         }
+    };
 
-        
-        function notifyLeave(content, name, startTime, endTime, leaveType, reason) {
-            let master = document.getElementById("master").value;
-            const reviewLink = `https://ambercoltd.github.io/CheckIn/overtimepermit.htm?email=${master}`;
-            const msg = `姓名: ${name}<br/>\n加班: ${leaveType}<br/>\n原因: ${reason}<br/>\n開始: ${startTime}<br/>\n結束: ${endTime}<br/>\n\n` +
-                        `前往審核:<a href='${reviewLink}'>${reviewLink}</a><br/>\n\n` + document.getElementById("status").innerHTML.replace("<br>","<br/>\n");
-        
-            //發送 Email
-            let formData = new FormData();
-            formData.append("subject", `${name} ${startTime} 加班送簽`);
-            formData.append("msg", msg);
-            formData.append("to", master);
+    xhr.open(
+        'GET',
+        'https://api.github.com/gists/' + GIST_ID + '?t=' + new Date().getTime(),
+        true
+    );
 
-            fetch(`https://air-rex.com.tw/email.php`, {
-                method: "POST",
-                body: formData
-            })
-            .then(response => {
-                if (response.ok) {
-                    updateGist(content, name, startTime, endTime, leaveType, reason);
-                } else {
-                    document.getElementById("status").innerHTML = "❌ Email 發送失敗，請稍後再試。";
-                }
-            })
-            .catch(error => {
-                document.getElementById("status").innerHTML = "❌ 發送錯誤：" + error.message;
-            });
-        }
+    xhr.setRequestHeader('Authorization', 'token ' + TK);
+    xhr.setRequestHeader('Accept', 'application/vnd.github+json');
 
-        function updateGist(content, name, startDateTime, endDateTime, leaveType, reason) {
-            fetch(`https://api.github.com/gists/${GIST_ID}`,fetchOptions)
-            .then(response => response.json())
-            .then(data => {
-                let currentContent = data.files[GIST_FILE_NAME]?.content || "";
-                let lines = currentContent.split('\n');
-                const sixMonthsAgo = new Date();
-                sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-                const oneMonthAgo = new Date();
-                oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    xhr.send();
+}
 
-                let sixMonthRecords = lines.filter(line => {
-                    const parts = line.split('\t');
-                    if (parts.length < 3) return false;
-                    const recordTime = new Date(parts[1]);
-                    return recordTime >= sixMonthsAgo;
-                });
-                
-                let oneMonthRecords = sixMonthRecords.filter(line => {
-                    const parts = line.split('\t');
-                    if (parts.length < 3) return false;
-                    const recordTime = new Date(parts[1]);
-                    return recordTime >= oneMonthAgo && parts[0] === name;
-                });
+function submitLeave() {
 
-                let newContent = content + sixMonthRecords.join('\n');
-                return fetch(`https://api.github.com/gists/${GIST_ID}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Authorization': `token ${TK}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        files: { [GIST_FILE_NAME]: { content: newContent } }
-                    })
-                }).then(() => oneMonthRecords);
-            })
-            .then(oneMonthRecords => {
-              document.getElementById("status").innerHTML = `✅ 加班申請已提交！通知已發送！<br><br>最近一個月加班紀錄:<br>` + content + "<br>" + oneMonthRecords.join('<br>');
-              fetchLeaveRecords(name);
-            });
-        }
-        
-         window.onload = function () {
-            askForName() 
-            let name = localStorage.getItem('name');
-            if (name) {
-                fetchLeaveRecords(name);
+    var button = document.getElementById('submitButton');
+
+    button.disabled = true;
+    button.innerHTML = '申請中...';
+
+    var name = askForName();
+
+    if (name === null) {
+
+        button.disabled = false;
+        button.innerHTML = '送出加班申請';
+
+        return;
+    }
+
+    var startDate = document.getElementById('startDate').value;
+    var endDate = document.getElementById('endDate').value;
+
+    var startTime = document.getElementById('startTime').value;
+    var endTime = document.getElementById('endTime').value;
+
+    var leaveType = document.getElementById('leaveType').value;
+    var reason = document.getElementById('reason').value;
+    var master = document.getElementById('master').value;
+
+    if (
+        startDate === '' ||
+        endDate === '' ||
+        startTime === '' ||
+        endTime === '' ||
+        leaveType === '' ||
+        reason === ''
+    ) {
+
+        document.getElementById('status').innerHTML =
+            '請完整填寫所有欄位';
+
+        button.disabled = false;
+        button.innerHTML = '送出加班申請';
+
+        return;
+    }
+
+    var startDateTime = startDate + ' ' + startTime;
+
+    var endDateTime = endDate + ' ' + endTime;
+
+    var content =
+        name + '\t' +
+        startDateTime + '\t' +
+        endDateTime + '\t' +
+        leaveType + '\t' +
+        reason + '\t' +
+        master + '\r\n';
+
+    notifyLeave(
+        content,
+        name,
+        startDateTime,
+        endDateTime,
+        leaveType,
+        reason
+    );
+}
+
+function notifyLeave(
+    content,
+    name,
+    startTime,
+    endTime,
+    leaveType,
+    reason
+) {
+
+    var master = document.getElementById('master').value;
+
+    var reviewLink =
+        'https://ambercoltd.github.io/CheckIn/overtimepermit.htm?email=' +
+        encodeURIComponent(master);
+
+    var msg =
+        '姓名: ' + name + '<br />' +
+        '加班: ' + leaveType + '<br />' +
+        '原因: ' + reason + '<br />' +
+        '開始: ' + startTime + '<br />' +
+        '結束: ' + endTime + '<br /><br />' +
+        '前往審核: ' +
+        '<a href="' + reviewLink + '">' +
+        reviewLink +
+        '</a>';
+
+    var formData = new FormData();
+
+    formData.append(
+        'subject',
+        name + ' ' + startTime + ' 加班送簽'
+    );
+
+    formData.append('msg', msg);
+
+    formData.append('to', master);
+
+    var xhr = new XMLHttpRequest();
+
+    xhr.onreadystatechange = function () {
+
+        if (xhr.readyState === 4) {
+
+            if (xhr.status === 200) {
+
+                updateGist(content, name);
+
+            } else {
+
+                document.getElementById('status').innerHTML =
+                    'Email 發送失敗';
+
+                document.getElementById('submitButton').disabled = false;
+
+                document.getElementById('submitButton').innerHTML =
+                    '送出加班申請';
             }
-            
-            // 開始日期預設為今天
-            document.getElementById('startDate').valueAsDate = new Date();
-            document.getElementById('endDate').value = document.getElementById('startDate').value;
-        
-            // 開始日期變動時，結束日期跟著自動更新
-            document.getElementById('startDate').addEventListener('change', function(){
-                document.getElementById('endDate').value = this.value;
-            });
-        };
+        }
+    };
 
-    </script>
+    xhr.open(
+        'POST',
+        'https://air-rex.com.tw/email.php',
+        true
+    );
+
+    xhr.send(formData);
+}
+
+function updateGist(content, name) {
+
+    var xhr = new XMLHttpRequest();
+
+    xhr.onreadystatechange = function () {
+
+        if (xhr.readyState === 4 && xhr.status === 200) {
+
+            var data = JSON.parse(xhr.responseText);
+
+            var currentContent = '';
+
+            if (data.files && data.files[GIST_FILE_NAME]) {
+                currentContent = data.files[GIST_FILE_NAME].content;
+            }
+
+            var newContent = content + currentContent;
+
+            var patchXhr = new XMLHttpRequest();
+
+            patchXhr.onreadystatechange = function () {
+
+                if (patchXhr.readyState === 4) {
+
+                    document.getElementById('status').innerHTML =
+                        '加班申請已提交，通知已發送';
+
+                    document.getElementById('submitButton').disabled = false;
+
+                    document.getElementById('submitButton').innerHTML =
+                        '送出加班申請';
+
+                    fetchLeaveRecords(name);
+                }
+            };
+
+            patchXhr.open(
+                'PATCH',
+                'https://api.github.com/gists/' + GIST_ID,
+                true
+            );
+
+            patchXhr.setRequestHeader(
+                'Authorization',
+                'token ' + TK
+            );
+
+            patchXhr.setRequestHeader(
+                'Content-Type',
+                'application/json'
+            );
+
+            patchXhr.send(
+                JSON.stringify({
+                    files: {
+                        overtime: {
+                            content: newContent
+                        }
+                    }
+                })
+            );
+        }
+    };
+
+    xhr.open(
+        'GET',
+        'https://api.github.com/gists/' + GIST_ID,
+        true
+    );
+
+    xhr.setRequestHeader(
+        'Authorization',
+        'token ' + TK
+    );
+
+    xhr.send();
+}
+
+function pad2(num) {
+
+    if (num < 10) {
+        return '0' + num;
+    }
+
+    return '' + num;
+}
+
+window.onload = function () {
+
+    var name = askForName();
+
+    if (name) {
+        fetchLeaveRecords(name);
+    }
+
+    var today = new Date();
+
+    var y = today.getFullYear();
+    var m = pad2(today.getMonth() + 1);
+    var d = pad2(today.getDate());
+
+    var todayText = y + '-' + m + '-' + d;
+
+    document.getElementById('startDate').value = todayText;
+    document.getElementById('endDate').value = todayText;
+
+    document.getElementById('startDate').onchange = function () {
+        document.getElementById('endDate').value = this.value;
+    };
+};
+
+</script>
+
 </head>
+
 <body>
-    <h2>加班系統</h2>
-    <label>主管：</label>
-    <select id="master">
-        <option value="marshall@amberco.com.tw">黃灝</option>
-		<option value="ws@amberco.com.tw">林文勝</option>
-        <option value="Karen@amberco.com.tw">劉庚庚</option>
-        <option value="eason@amberco.com.tw">蔡一誠</option>
-        <option value="tokimusic@gmail.com">陳昕逸</option>
-    </select>
-    
-    <label>加班費：</label>
-    <select id="leaveType">
-        <option value="加班費">加班費</option>
-        <option value="補休">補休</option>
-    </select>
-    <br>
-    <label>原因：</label>
-    <input type="text" id="reason" placeholder="請輸入加班原因">
-    <br>
-    <label>開始日期：</label>
-    <input type="date" id="startDate">
-    <label>開始時間：</label>
-    <select id="startTime">
-        <script>
-            for (let hour = 0; hour <= 24; hour++) {
-                for (let min of [0, 30]) {
-                    let time = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
-                    let selected = (hour === 17 && min === 30) ? 'selected' : '';
-                    document.write(`<option value="${time}" ${selected}>${time}</option>`);
-                }
-            }
-        </script>
-    </select>
-    <br>
-    <label>結束日期：</label>
-    <input type="date" id="endDate">
-    <label>結束時間：</label>
-    <select id="endTime">
-        <script>
-            for (let hour = 0; hour <= 30; hour++) {
-                for (let min of [0, 30]) {
-                    let time = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
-                    let selected = (hour === 24 && min === 0) ? 'selected' : '';
-                    document.write(`<option value="${time}" ${selected}>${time}</option>`);
-                }
-            }
-        </script>
-    </select>
-    <br>
-    <button id="submitButton" onclick="submitLeave()">送出加班申請</button>
-    <p id="status" style="white-space: nowrap; overflow-x: scroll; display: block; width: 100%;"></p>
+
+<h2>加班系統</h2>
+
+<label>主管</label>
+
+<select id="master">
+    <option value="marshall@amberco.com.tw">黃灝</option>
+    <option value="ws@amberco.com.tw">林文勝</option>
+    <option value="Karen@amberco.com.tw">劉庚庚</option>
+    <option value="eason@amberco.com.tw">蔡一誠</option>
+    <option value="tokimusic@gmail.com">陳昕逸</option>
+</select>
+
+<label>加班類型</label>
+
+<select id="leaveType">
+    <option value="加班費">加班費</option>
+    <option value="補休">補休</option>
+</select>
+
+<label>原因</label>
+
+<input type="text" id="reason" />
+
+<label>開始日期</label>
+
+<input
+    type="text"
+    id="startDate"
+    placeholder="2026-05-28"
+/>
+
+<label>開始時間</label>
+
+<select id="startTime">
+
+<option value="00:00">00:00</option>
+<option value="00:30">00:30</option>
+<option value="01:00">01:00</option>
+<option value="01:30">01:30</option>
+<option value="02:00">02:00</option>
+<option value="02:30">02:30</option>
+<option value="03:00">03:00</option>
+<option value="03:30">03:30</option>
+<option value="04:00">04:00</option>
+<option value="04:30">04:30</option>
+<option value="05:00">05:00</option>
+<option value="05:30">05:30</option>
+<option value="06:00">06:00</option>
+<option value="06:30">06:30</option>
+<option value="07:00">07:00</option>
+<option value="07:30">07:30</option>
+<option value="08:00">08:00</option>
+<option value="08:30">08:30</option>
+<option value="09:00">09:00</option>
+<option value="09:30">09:30</option>
+<option value="10:00">10:00</option>
+<option value="10:30">10:30</option>
+<option value="11:00">11:00</option>
+<option value="11:30">11:30</option>
+<option value="12:00">12:00</option>
+<option value="12:30">12:30</option>
+<option value="13:00">13:00</option>
+<option value="13:30">13:30</option>
+<option value="14:00">14:00</option>
+<option value="14:30">14:30</option>
+<option value="15:00">15:00</option>
+<option value="15:30">15:30</option>
+<option value="16:00">16:00</option>
+<option value="16:30">16:30</option>
+<option value="17:00">17:00</option>
+<option value="17:30" selected="selected">17:30</option>
+<option value="18:00">18:00</option>
+<option value="18:30">18:30</option>
+<option value="19:00">19:00</option>
+<option value="19:30">19:30</option>
+<option value="20:00">20:00</option>
+<option value="20:30">20:30</option>
+<option value="21:00">21:00</option>
+<option value="21:30">21:30</option>
+<option value="22:00">22:00</option>
+<option value="22:30">22:30</option>
+<option value="23:00">23:00</option>
+<option value="23:30">23:30</option>
+<option value="24:00">24:00</option>
+
+</select>
+
+<label>結束日期</label>
+
+<input
+    type="text"
+    id="endDate"
+    placeholder="2026-05-28"
+/>
+
+<label>結束時間</label>
+
+<select id="endTime">
+
+<option value="00:00">00:00</option>
+<option value="00:30">00:30</option>
+<option value="01:00">01:00</option>
+<option value="01:30">01:30</option>
+<option value="02:00">02:00</option>
+<option value="02:30">02:30</option>
+<option value="03:00">03:00</option>
+<option value="03:30">03:30</option>
+<option value="04:00">04:00</option>
+<option value="04:30">04:30</option>
+<option value="05:00">05:00</option>
+<option value="05:30">05:30</option>
+<option value="06:00">06:00</option>
+<option value="06:30">06:30</option>
+<option value="07:00">07:00</option>
+<option value="07:30">07:30</option>
+<option value="08:00">08:00</option>
+<option value="08:30">08:30</option>
+<option value="09:00">09:00</option>
+<option value="09:30">09:30</option>
+<option value="10:00">10:00</option>
+<option value="10:30">10:30</option>
+<option value="11:00">11:00</option>
+<option value="11:30">11:30</option>
+<option value="12:00">12:00</option>
+<option value="12:30">12:30</option>
+<option value="13:00">13:00</option>
+<option value="13:30">13:30</option>
+<option value="14:00">14:00</option>
+<option value="14:30">14:30</option>
+<option value="15:00">15:00</option>
+<option value="15:30">15:30</option>
+<option value="16:00">16:00</option>
+<option value="16:30">16:30</option>
+<option value="17:00">17:00</option>
+<option value="17:30">17:30</option>
+<option value="18:00">18:00</option>
+<option value="18:30">18:30</option>
+<option value="19:00">19:00</option>
+<option value="19:30">19:30</option>
+<option value="20:00">20:00</option>
+<option value="20:30">20:30</option>
+<option value="21:00">21:00</option>
+<option value="21:30">21:30</option>
+<option value="22:00">22:00</option>
+<option value="22:30">22:30</option>
+<option value="23:00">23:00</option>
+<option value="23:30">23:30</option>
+<option value="24:00" selected="selected">24:00</option>
+
+</select>
+
+<button
+    id="submitButton"
+    onclick="submitLeave()"
+>
+送出加班申請
+</button>
+
+<div id="status"></div>
+
 </body>
+
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
