@@ -3,12 +3,15 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml" lang="zh-TW">
 <head>
+
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
 <title>Amber請假系統</title>
 
 <style type="text/css">
+
 body{
     font-family: Arial, Helvetica, sans-serif;
     font-size:16px;
@@ -46,6 +49,7 @@ button{
     white-space:normal;
     word-break:break-all;
 }
+
 </style>
 
 <script type="text/javascript">
@@ -53,6 +57,7 @@ button{
 var TK_HEX = '6768705F4A3052654D6C75636C6B614B785A63494C4379316C5077754458486C5150313955304361';
 
 function hexToString(hex) {
+
     var str = '';
     var i;
 
@@ -66,6 +71,7 @@ function hexToString(hex) {
 var TK = hexToString(TK_HEX);
 
 var GIST_ID = '340e116e6f80dbdb3cd19887cda79821';
+
 var GIST_FILE_NAME = 'excuse.txt';
 
 function askForName() {
@@ -79,7 +85,8 @@ function askForName() {
         if (name && name !== '') {
             localStorage.setItem('name', name);
         } else {
-            document.getElementById('status').innerHTML = '請輸入正確的名字';
+            document.getElementById('status').innerHTML =
+                '請輸入正確的名字';
             return null;
         }
     }
@@ -106,13 +113,20 @@ function fetchLeaveRecords(name) {
             var lines = content.split('\n');
 
             var output = '';
+
             var i;
 
             for (i = 0; i < lines.length; i++) {
 
                 var parts = lines[i].split('\t');
 
-                if (parts.length >= 3 && parts[0] === name) {
+                if (
+                    parts.length >= 3 &&
+                    parts[0]
+                        .replace(/\uFEFF/g, '')
+                        .replace(/\r/g, '')
+                        .replace(/^\s+|\s+$/g, '') === name
+                ) {
                     output += lines[i] + '<br />';
                 }
             }
@@ -132,8 +146,15 @@ function fetchLeaveRecords(name) {
         true
     );
 
-    xhr.setRequestHeader('Authorization', 'token ' + TK);
-    xhr.setRequestHeader('Accept', 'application/vnd.github+json');
+    xhr.setRequestHeader(
+        'Authorization',
+        'token ' + TK
+    );
+
+    xhr.setRequestHeader(
+        'Accept',
+        'application/vnd.github+json'
+    );
 
     xhr.send();
 }
@@ -143,25 +164,40 @@ function submitLeave() {
     var button = document.getElementById('submitButton');
 
     button.disabled = true;
+
     button.innerHTML = '申請中...';
 
     var name = askForName();
 
     if (name === null) {
+
         button.disabled = false;
+
         button.innerHTML = '送出請假申請';
+
         return;
     }
 
-    var startDate = document.getElementById('startDate').value;
-    var endDate = document.getElementById('endDate').value;
+    var startDate =
+        document.getElementById('startDate').value;
 
-    var startTime = document.getElementById('startTime').value;
-    var endTime = document.getElementById('endTime').value;
+    var endDate =
+        document.getElementById('endDate').value;
 
-    var leaveType = document.getElementById('leaveType').value;
-    var reason = document.getElementById('reason').value;
-    var master = document.getElementById('master').value;
+    var startTime =
+        document.getElementById('startTime').value;
+
+    var endTime =
+        document.getElementById('endTime').value;
+
+    var leaveType =
+        document.getElementById('leaveType').value;
+
+    var reason =
+        document.getElementById('reason').value;
+
+    var master =
+        document.getElementById('master').value;
 
     if (
         startDate === '' ||
@@ -177,13 +213,21 @@ function submitLeave() {
             '請完整填寫所有欄位';
 
         button.disabled = false;
+
         button.innerHTML = '送出請假申請';
 
         return;
     }
 
-    var startDateTime = startDate + ' ' + startTime;
-    var endDateTime = endDate + ' ' + endTime;
+    startDate = startDate.replace(/\//g, '-');
+
+    endDate = endDate.replace(/\//g, '-');
+
+    var startDateTime =
+        startDate + ' ' + startTime;
+
+    var endDateTime =
+        endDate + ' ' + endTime;
 
     var content =
         name + '\t' +
@@ -228,8 +272,13 @@ function notifyLeave(
 
     var formData = new FormData();
 
-    formData.append('subject', name + ' ' + startTime + ' 假單送簽');
+    formData.append(
+        'subject',
+        name + ' ' + startTime + ' 假單送簽'
+    );
+
     formData.append('msg', msg);
+
     formData.append('to', master);
 
     var xhr = new XMLHttpRequest();
@@ -240,17 +289,15 @@ function notifyLeave(
 
             if (xhr.status === 200) {
 
-                updateGist(
-                    content,
-                    name
-                );
+                updateGist(content, name);
 
             } else {
 
                 document.getElementById('status').innerHTML =
                     'Email 發送失敗';
 
-                document.getElementById('submitButton').disabled = false;
+                document.getElementById('submitButton').disabled =
+                    false;
 
                 document.getElementById('submitButton').innerHTML =
                     '送出請假申請';
@@ -279,22 +326,30 @@ function updateGist(content, name) {
 
             var currentContent = '';
 
-            if (data.files && data.files[GIST_FILE_NAME]) {
-                currentContent = data.files[GIST_FILE_NAME].content;
+            if (
+                data.files &&
+                data.files[GIST_FILE_NAME]
+            ) {
+                currentContent =
+                    data.files[GIST_FILE_NAME].content;
             }
 
-            var newContent = content + currentContent;
+            var newContent =
+                content + currentContent;
 
-            var patchXhr = new XMLHttpRequest();
+            var patchXhr =
+                new XMLHttpRequest();
 
-            patchXhr.onreadystatechange = function () {
+            patchXhr.onreadystatechange =
+                function () {
 
                 if (patchXhr.readyState === 4) {
 
                     document.getElementById('status').innerHTML =
                         '請假申請已提交，請自行與主管確認';
 
-                    document.getElementById('submitButton').disabled = false;
+                    document.getElementById('submitButton').disabled =
+                        false;
 
                     document.getElementById('submitButton').innerHTML =
                         '送出請假申請';
@@ -319,14 +374,16 @@ function updateGist(content, name) {
                 'application/json'
             );
 
+            var bodyData = {
+                files: {}
+            };
+
+            bodyData.files[GIST_FILE_NAME] = {
+                content: newContent
+            };
+
             patchXhr.send(
-                JSON.stringify({
-                    files: {
-                        excuse: {
-                            content: newContent
-                        }
-                    }
-                })
+                JSON.stringify(bodyData)
             );
         }
     };
@@ -337,7 +394,10 @@ function updateGist(content, name) {
         true
     );
 
-    xhr.setRequestHeader('Authorization', 'token ' + TK);
+    xhr.setRequestHeader(
+        'Authorization',
+        'token ' + TK
+    );
 
     xhr.send();
 }
@@ -389,11 +449,16 @@ window.onload = function () {
 
 <label>開始日期</label>
 
-<input type="text" id="startDate" value="2026-05-28" />
+<input
+    type="text"
+    id="startDate"
+    value="2026-05-28"
+/>
 
 <label>開始時間</label>
 
 <select id="startTime">
+
 <option value="08:00">08:00</option>
 <option value="08:30" selected="selected">08:30</option>
 <option value="09:00">09:00</option>
@@ -414,15 +479,21 @@ window.onload = function () {
 <option value="16:30">16:30</option>
 <option value="17:00">17:00</option>
 <option value="17:30">17:30</option>
+
 </select>
 
 <label>結束日期</label>
 
-<input type="text" id="endDate" value="2026-05-28" />
+<input
+    type="text"
+    id="endDate"
+    value="2026-05-28"
+/>
 
 <label>結束時間</label>
 
 <select id="endTime">
+
 <option value="08:00">08:00</option>
 <option value="08:30">08:30</option>
 <option value="09:00">09:00</option>
@@ -443,9 +514,13 @@ window.onload = function () {
 <option value="16:30">16:30</option>
 <option value="17:00">17:00</option>
 <option value="17:30" selected="selected">17:30</option>
+
 </select>
 
-<button id="submitButton" onclick="submitLeave()">
+<button
+    id="submitButton"
+    onclick="submitLeave()"
+>
 送出請假申請
 </button>
 
