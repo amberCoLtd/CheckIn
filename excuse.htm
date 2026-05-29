@@ -2,13 +2,14 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
 <html xmlns="http://www.w3.org/1999/xhtml" lang="zh-TW">
+
 <head>
 
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<title>Amber請假系統</title>
+<title>Amber加班系統</title>
 
 <style type="text/css">
 
@@ -43,8 +44,7 @@ button{
     cursor:pointer;
 }
 
-#status,
-#exdata{
+#status{
     margin-top:20px;
     white-space:normal;
     word-break:break-all;
@@ -70,9 +70,9 @@ function hexToString(hex) {
 
 var TK = hexToString(TK_HEX);
 
-var GIST_ID = '340e116e6f80dbdb3cd19887cda79821';
+var GIST_ID = 'e5a30f0ae2615a23185d4fbc52767adc';
 
-var GIST_FILE_NAME = 'excuse.txt';
+var GIST_FILE_NAME = 'overtime.txt';
 
 function askForName() {
 
@@ -106,8 +106,12 @@ function fetchLeaveRecords(name) {
 
             var content = '';
 
-            if (data.files && data.files[GIST_FILE_NAME]) {
-                content = data.files[GIST_FILE_NAME].content;
+            if (
+                data.files &&
+                data.files[GIST_FILE_NAME]
+            ) {
+                content =
+                    data.files[GIST_FILE_NAME].content;
             }
 
             var lines = content.split('\n');
@@ -132,11 +136,11 @@ function fetchLeaveRecords(name) {
             }
 
             if (output === '') {
-                output = name + ' 無最近請假紀錄';
+                output = name + ' 無最近加班紀錄';
             }
 
-            document.getElementById('exdata').innerHTML =
-                '最近請假紀錄：<br />' + output;
+            document.getElementById('status').innerHTML =
+                '最近一個月加班紀錄：<br />' + output;
         }
     };
 
@@ -161,7 +165,8 @@ function fetchLeaveRecords(name) {
 
 function submitLeave() {
 
-    var button = document.getElementById('submitButton');
+    var button =
+        document.getElementById('submitButton');
 
     button.disabled = true;
 
@@ -173,7 +178,7 @@ function submitLeave() {
 
         button.disabled = false;
 
-        button.innerHTML = '送出請假申請';
+        button.innerHTML = '送出加班申請';
 
         return;
     }
@@ -205,8 +210,7 @@ function submitLeave() {
         startTime === '' ||
         endTime === '' ||
         leaveType === '' ||
-        reason === '' ||
-        master === ''
+        reason === ''
     ) {
 
         document.getElementById('status').innerHTML =
@@ -214,7 +218,7 @@ function submitLeave() {
 
         button.disabled = false;
 
-        button.innerHTML = '送出請假申請';
+        button.innerHTML = '送出加班申請';
 
         return;
     }
@@ -243,7 +247,6 @@ function submitLeave() {
         startDateTime,
         endDateTime,
         leaveType,
-        master,
         reason
     );
 }
@@ -254,27 +257,32 @@ function notifyLeave(
     startTime,
     endTime,
     leaveType,
-    master,
     reason
 ) {
 
+    var master =
+        document.getElementById('master').value;
+
     var reviewLink =
-        'https://ambercoltd.github.io/CheckIn/excusepermit.htm?email=' +
+        'https://ambercoltd.github.io/CheckIn/overtimepermit.htm?email=' +
         encodeURIComponent(master);
 
     var msg =
         '姓名: ' + name + '<br />' +
-        '假別: ' + leaveType + '<br />' +
+        '加班: ' + leaveType + '<br />' +
         '原因: ' + reason + '<br />' +
         '開始: ' + startTime + '<br />' +
         '結束: ' + endTime + '<br /><br />' +
-        '前往審核: ' + reviewLink;
+        '前往審核: ' +
+        '<a href="' + reviewLink + '">' +
+        reviewLink +
+        '</a>';
 
     var formData = new FormData();
 
     formData.append(
         'subject',
-        name + ' ' + startTime + ' 假單送簽'
+        name + ' ' + startTime + ' 加班送簽'
     );
 
     formData.append('msg', msg);
@@ -300,7 +308,7 @@ function notifyLeave(
                     false;
 
                 document.getElementById('submitButton').innerHTML =
-                    '送出請假申請';
+                    '送出加班申請';
             }
         }
     };
@@ -346,13 +354,13 @@ function updateGist(content, name) {
                 if (patchXhr.readyState === 4) {
 
                     document.getElementById('status').innerHTML =
-                        '請假申請已提交，請自行與主管確認';
+                        '加班申請已提交，通知已發送';
 
                     document.getElementById('submitButton').disabled =
                         false;
 
                     document.getElementById('submitButton').innerHTML =
-                        '送出請假申請';
+                        '送出加班申請';
 
                     fetchLeaveRecords(name);
                 }
@@ -402,37 +410,14 @@ function updateGist(content, name) {
     xhr.send();
 }
 
+function pad2(num) {
 
-function showDatePicker(targetId) {
-
-    var picker;
-
-    if (targetId === 'startDate') {
-        picker = document.getElementById('startDatePicker');
-    }
-    else {
-        picker = document.getElementById('endDatePicker');
+    if (num < 10) {
+        return '0' + num;
     }
 
-    try {
-        if (picker.showPicker) {
-            picker.showPicker();
-        } else {
-            picker.click();
-        }
-    } catch(e) {
-    }
+    return '' + num;
 }
-
-function copyDate(textId, pickerId) {
-
-    var picker = document.getElementById(pickerId);
-
-    if (picker.value !== '') {
-        document.getElementById(textId).value = picker.value;
-    }
-}
-
 
 window.onload = function () {
 
@@ -441,6 +426,30 @@ window.onload = function () {
     if (name) {
         fetchLeaveRecords(name);
     }
+
+    var today = new Date();
+
+    var y = today.getFullYear();
+
+    var m = pad2(today.getMonth() + 1);
+
+    var d = pad2(today.getDate());
+
+    var todayText =
+        y + '-' + m + '-' + d;
+
+    document.getElementById('startDate').value =
+        todayText;
+
+    document.getElementById('endDate').value =
+        todayText;
+
+    document.getElementById('startDate').onchange =
+        function () {
+
+        document.getElementById('endDate').value =
+            this.value;
+    };
 };
 
 </script>
@@ -449,7 +458,7 @@ window.onload = function () {
 
 <body>
 
-<h2>請假系統</h2>
+<h2>加班系統</h2>
 
 <label>主管</label>
 
@@ -461,18 +470,11 @@ window.onload = function () {
     <option value="tokimusic@gmail.com">陳昕逸</option>
 </select>
 
-<label>假別</label>
+<label>加班類型</label>
 
 <select id="leaveType">
-    <option value="病假">病假</option>
-    <option value="特休">特休</option>
-    <option value="事假">事假</option>
-    <option value="生理假">生理假</option>
-    <option value="家庭照顧假">家庭照顧假</option>
-    <option value="公假">公假</option>
-    <option value="喪假">喪假</option>
-    <option value="婚假">婚假</option>
-    <option value="其他">其他</option>
+    <option value="加班費">加班費</option>
+    <option value="補休">補休</option>
 </select>
 
 <label>原因</label>
@@ -484,62 +486,29 @@ window.onload = function () {
 <input
     type="text"
     id="startDate"
-    value="2026-05-28"
-    onclick="showDatePicker('startDate')"
-/>
-<input
-    type="date"
-    id="startDatePicker"
-    style="position:absolute;left:-9999px;top:-9999px;"
-    onchange="copyDate('startDate','startDatePicker')"
+    placeholder="2026-05-28"
 />
 
 <label>開始時間</label>
 
 <select id="startTime">
 
-<option value="08:00">08:00</option>
-<option value="08:30" selected="selected">08:30</option>
-<option value="09:00">09:00</option>
-<option value="09:30">09:30</option>
-<option value="10:00">10:00</option>
-<option value="10:30">10:30</option>
-<option value="11:00">11:00</option>
-<option value="11:30">11:30</option>
-<option value="12:00">12:00</option>
-<option value="12:30">12:30</option>
-<option value="13:00">13:00</option>
-<option value="13:30">13:30</option>
-<option value="14:00">14:00</option>
-<option value="14:30">14:30</option>
-<option value="15:00">15:00</option>
-<option value="15:30">15:30</option>
-<option value="16:00">16:00</option>
-<option value="16:30">16:30</option>
-<option value="17:00">17:00</option>
-<option value="17:30">17:30</option>
-
-</select>
-
-<label>結束日期</label>
-
-<input
-    type="text"
-    id="endDate"
-    value="2026-05-28"
-    onclick="showDatePicker('endDate')"
-/>
-<input
-    type="date"
-    id="endDatePicker"
-    style="position:absolute;left:-9999px;top:-9999px;"
-    onchange="copyDate('endDate','endDatePicker')"
-/>
-
-<label>結束時間</label>
-
-<select id="endTime">
-
+<option value="00:00">00:00</option>
+<option value="00:30">00:30</option>
+<option value="01:00">01:00</option>
+<option value="01:30">01:30</option>
+<option value="02:00">02:00</option>
+<option value="02:30">02:30</option>
+<option value="03:00">03:00</option>
+<option value="03:30">03:30</option>
+<option value="04:00">04:00</option>
+<option value="04:30">04:30</option>
+<option value="05:00">05:00</option>
+<option value="05:30">05:30</option>
+<option value="06:00">06:00</option>
+<option value="06:30">06:30</option>
+<option value="07:00">07:00</option>
+<option value="07:30">07:30</option>
 <option value="08:00">08:00</option>
 <option value="08:30">08:30</option>
 <option value="09:00">09:00</option>
@@ -560,6 +529,83 @@ window.onload = function () {
 <option value="16:30">16:30</option>
 <option value="17:00">17:00</option>
 <option value="17:30" selected="selected">17:30</option>
+<option value="18:00">18:00</option>
+<option value="18:30">18:30</option>
+<option value="19:00">19:00</option>
+<option value="19:30">19:30</option>
+<option value="20:00">20:00</option>
+<option value="20:30">20:30</option>
+<option value="21:00">21:00</option>
+<option value="21:30">21:30</option>
+<option value="22:00">22:00</option>
+<option value="22:30">22:30</option>
+<option value="23:00">23:00</option>
+<option value="23:30">23:30</option>
+<option value="24:00">24:00</option>
+
+</select>
+
+<label>結束日期</label>
+
+<input
+    type="text"
+    id="endDate"
+    placeholder="2026-05-28"
+/>
+
+<label>結束時間</label>
+
+<select id="endTime">
+
+<option value="00:00">00:00</option>
+<option value="00:30">00:30</option>
+<option value="01:00">01:00</option>
+<option value="01:30">01:30</option>
+<option value="02:00">02:00</option>
+<option value="02:30">02:30</option>
+<option value="03:00">03:00</option>
+<option value="03:30">03:30</option>
+<option value="04:00">04:00</option>
+<option value="04:30">04:30</option>
+<option value="05:00">05:00</option>
+<option value="05:30">05:30</option>
+<option value="06:00">06:00</option>
+<option value="06:30">06:30</option>
+<option value="07:00">07:00</option>
+<option value="07:30">07:30</option>
+<option value="08:00">08:00</option>
+<option value="08:30">08:30</option>
+<option value="09:00">09:00</option>
+<option value="09:30">09:30</option>
+<option value="10:00">10:00</option>
+<option value="10:30">10:30</option>
+<option value="11:00">11:00</option>
+<option value="11:30">11:30</option>
+<option value="12:00">12:00</option>
+<option value="12:30">12:30</option>
+<option value="13:00">13:00</option>
+<option value="13:30">13:30</option>
+<option value="14:00">14:00</option>
+<option value="14:30">14:30</option>
+<option value="15:00">15:00</option>
+<option value="15:30">15:30</option>
+<option value="16:00">16:00</option>
+<option value="16:30">16:30</option>
+<option value="17:00">17:00</option>
+<option value="17:30">17:30</option>
+<option value="18:00">18:00</option>
+<option value="18:30">18:30</option>
+<option value="19:00">19:00</option>
+<option value="19:30">19:30</option>
+<option value="20:00">20:00</option>
+<option value="20:30">20:30</option>
+<option value="21:00">21:00</option>
+<option value="21:30">21:30</option>
+<option value="22:00">22:00</option>
+<option value="22:30">22:30</option>
+<option value="23:00">23:00</option>
+<option value="23:30">23:30</option>
+<option value="24:00" selected="selected">24:00</option>
 
 </select>
 
@@ -567,12 +613,11 @@ window.onload = function () {
     id="submitButton"
     onclick="submitLeave()"
 >
-送出請假申請
+送出加班申請
 </button>
 
 <div id="status"></div>
 
-<div id="exdata"></div>
-
 </body>
+
 </html>
