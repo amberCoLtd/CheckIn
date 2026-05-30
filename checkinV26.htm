@@ -345,7 +345,7 @@ async function Update() {
     const now = new Date();
     const hhmm = now.getHours() * 100 + now.getMinutes();
     
-    if (hhmm < 800 || hhmm > 1800) {
+    if (hhmm < 800 || hhmm >= 1800) {
       warnings.push(
         "⏰ 已進入加班時間\n請確認是否已送出加班申請單"
       );
@@ -364,7 +364,6 @@ async function Update() {
       }
     }
     // ② 組時間
-    const now = new Date();
     const timeStr =
       `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ` +
       `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
