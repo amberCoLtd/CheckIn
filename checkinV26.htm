@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>打卡系統V2.5</title>
+<title>打卡系統V2.6</title>
 
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
@@ -90,10 +90,39 @@ function isAndroid() {
 let lineUserId = null;
 
 async function initLiffOnce() {
-  await liff.init({ liffId: LIFF_ID });
-  if (liff.isLoggedIn()) {
+  try {
+
+    await liff.init({
+      liffId: LIFF_ID
+    });
+
+    console.log("LIFF INIT OK");
+
+    if (!liff.isLoggedIn()) {
+      console.log("NOT LOGIN");
+      liff.login();
+      return false;
+    }
+
     const profile = await liff.getProfile();
+
+    console.log("PROFILE=", profile);
+
     lineUserId = profile.userId;
+
+    document.getElementById("status").innerHTML =
+      "LINE UID：<br>" + lineUserId;
+
+    return true;
+
+  } catch (e) {
+
+    console.error(e);
+
+    document.getElementById("status").innerHTML =
+      "LIFF錯誤：<br>" + e;
+
+    return false;
   }
 }
 
@@ -103,8 +132,8 @@ function updateTitle() {
   const title = document.getElementById("title");
   const status = liff.isLoggedIn() ? "LINE已認證" : "未登入";
   title.textContent = tel
-    ? `📍 ${tel}（${status}） 📍 打卡系統V2.5`
-    : `📍 打卡系統V2.5`;
+    ? `📍 ${tel}（${status}） 📍 打卡系統V2.6`
+    : `📍 打卡系統V2.6`;
 }
 
 function showLoading() {
@@ -333,31 +362,60 @@ async function Update() {
 
 /* ================= 啟動 ================= */
 window.onload = async () => {
+
+  document.getElementById("status").innerHTML =
+    "LIFF初始化中...";
+
   document.getElementById("btnCheckin").style.display = "none";
 
-  await initLiffOnce();
+  const ok = await initLiffOnce();
 
-  if (!lineUserId) {
-    alert("請使用 LINE 開啟此頁面");
+  if (!ok) {
     return;
   }
 
+  if (!lineUserId) {
+
+    document.getElementById("status").innerHTML =
+      "❌ 無法取得LINE UID";
+
+    return;
+  }
+
+  document.getElementById("status").innerHTML =
+    "✅ UID取得成功<br>" + lineUserId;
+
   const hasUID = await loadUIDFile();
+
   if (!hasUID) {
-    alert("!!! 初次使用請輸入正確電話，打錯要花500元請LINE刪除 !!!");
+
+    alert("首次使用請輸入手機");
+
     localStorage.removeItem("tel");
     getTel();
   }
 
   updateTitle();
-  loadMyFile();
+
+  await loadMyFile();
 
   try {
+
     await tryGetLocation();
-    document.getElementById("btnCheckin").style.display = "inline-block";
-  } catch {
-    document.getElementById("btnRelocate").style.display = "inline-block";
-    document.getElementById("status").innerText = "⚠ 無法取得定位請開啟權限";
+
+    document.getElementById("status").innerHTML +=
+      "<br>✅ GPS正常";
+
+    document.getElementById("btnCheckin").style.display =
+      "inline-block";
+
+  } catch (e) {
+
+    document.getElementById("status").innerHTML +=
+      "<br>⚠ GPS失敗：" + e.message;
+
+    document.getElementById("btnRelocate").style.display =
+      "inline-block";
   }
 };
 </script>
@@ -369,7 +427,7 @@ window.onload = async () => {
   <div class="spinner"></div>
 </div>
 
-<h2 id="title">📍 打卡系統V2.5</h2>
+<h2 id="title">📍 打卡系統V2.6</h2>
 
 <button id="btnCheckin" onclick="Update()">打卡</button>
 <button id="btnRelocate" style="display:none" onclick="retryLocation()">📍 定位權限錯誤</button>
