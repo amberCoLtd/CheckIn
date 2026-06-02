@@ -75,23 +75,36 @@ var GIST_ID = '340e116e6f80dbdb3cd19887cda79821';
 var GIST_FILE_NAME = 'excuse.txt';
 
 function askForName() {
-
     var name = localStorage.getItem('name');
 
-    if (!name || name === 'null') {
+    // 檢查是否包含數字
+    function isValidName(str) {
+        return str && str.trim() !== '' && !/[0-9]/.test(str);
+    }
 
-        name = prompt('請輸入您的名字：', '');
+    // localStorage 內的名字無效
+    if (!isValidName(name)) {
+        localStorage.removeItem('name');
 
-        if (name && name !== '') {
-            localStorage.setItem('name', name);
-        } else {
-            document.getElementById('status').innerHTML =
-                '請輸入正確的名字';
-            return null;
+        while (true) {
+            name = prompt('請輸入您的名字（不可包含數字）：', '');
+
+            if (name === null) {
+                document.getElementById('status').innerHTML =
+                    '請輸入正確的名字';
+                return null;
+            }
+
+            if (isValidName(name)) {
+                localStorage.setItem('name', name.trim());
+                break;
+            }
+
+            alert('名字不可為空白且不可包含數字');
         }
     }
 
-    return name;
+    return name.trim();
 }
 
 function fetchLeaveRecords(name) {
