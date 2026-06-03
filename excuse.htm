@@ -87,7 +87,7 @@ function askForName() {
         localStorage.removeItem('name');
 
         while (true) {
-            name = prompt('請輸入您的名字（不可包含數字）：', '');
+            name = prompt('請輸入您的 名字（請認真輸入，打錯修改要500元）：', '');
 
             if (name === null) {
                 document.getElementById('status').innerHTML =
