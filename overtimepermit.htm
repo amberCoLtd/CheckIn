@@ -1,11 +1,72 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>加班審核</title>
+    <title>Overtime Approval / 加班審核</title>
+
+    <style>
+        body{
+            font-family: Arial, Helvetica, sans-serif;
+            font-size:16px;
+            margin:15px;
+            line-height:1.8;
+            color:#222;
+        }
+
+        h2{
+            margin-bottom:10px;
+        }
+
+        .zh{
+            color:#666;
+            font-size:14px;
+            font-weight:normal;
+        }
+
+        .note{
+            color:#666;
+            margin-bottom:18px;
+            max-width:760px;
+            line-height:1.5;
+        }
+
+        table{
+            border-collapse:collapse;
+            width:100%;
+            max-width:1100px;
+            margin-top:15px;
+        }
+
+        th,
+        td{
+            border:1px solid #999;
+            padding:8px;
+            text-align:left;
+            vertical-align:top;
+            word-break:break-all;
+        }
+
+        th{
+            background:#f2f2f2;
+        }
+
+        button{
+            padding:8px 12px;
+            font-size:15px;
+            cursor:pointer;
+            min-width:110px;
+        }
+
+        #status{
+            margin-top:15px;
+            font-weight:bold;
+        }
+    </style>
+
     <script>
         const TK_HEX = '6768705F4A3052654D6C75636C6B614B785A63494C4379316C5077754458486C5150313955304361';
+
         function hexToString(hex) {
             let str = '';
             for (let i = 0; i < hex.length; i += 2) {
@@ -13,14 +74,26 @@
             }
             return str;
         }
+
         const TK = hexToString(TK_HEX);
         const GIST_ID = 'e5a30f0ae2615a23185d4fbc52767adc';
         const GIST_FILE_NAME = 'overtime.txt';
-        const fetchOptions = {};
-        fetchOptions.headers = {"Authorization": `token ${TK}`,"Accept": "application/vnd.github+json"};
-        
+
+        const fetchOptions = {
+            headers: {
+                "Authorization": `token ${TK}`,
+                "Accept": "application/vnd.github+json"
+            }
+        };
+
+        function setStatus(msg) {
+            document.getElementById("status").innerHTML = msg;
+        }
+
         function loadData() {
-            fetch(`https://api.github.com/gists/${GIST_ID}?timestamp=${new Date().getTime()}`,fetchOptions)
+            setStatus("Loading overtime records... / 載入加班紀錄中...");
+
+            fetch(`https://api.github.com/gists/${GIST_ID}?timestamp=${new Date().getTime()}`, fetchOptions)
             .then(response => response.json())
             .then(data => {
                 let content = data.files[GIST_FILE_NAME]?.content || "";
@@ -28,9 +101,22 @@
                 let tableBody = document.getElementById("records");
                 tableBody.innerHTML = "";
 
+                const email = new URLSearchParams(window.location.search).get("email");
+
+                if (!email) {
+                    setStatus("Supervisor email is missing in the URL. / 網址缺少主管 Email。");
+                    return;
+                }
+
+                let count = 0;
+
                 lines.forEach((line, index) => {
                     if (!line.trim()) return;
+
                     let cols = line.split('\t');
+
+                    if (cols.length < 6) return;
+
                     let row = document.createElement("tr");
 
                     cols.forEach(col => {
@@ -38,38 +124,52 @@
                         cell.textContent = col;
                         row.appendChild(cell);
                     });
-    				const email = new URLSearchParams(window.location.search).get("email");
 
-                    if ( (cols.length < 7 || !cols[6]?.trim() ) && email === cols[5].trim()) {
+                    let actionCell = document.createElement("td");
+
+                    if ((cols.length < 7 || !cols[6]?.trim()) && email === cols[5].trim()) {
                         let approveBtn = document.createElement("button");
-                        approveBtn.textContent = "核准";
-                        approveBtn.onclick = () => updateStatus(index, line, "核准", approveBtn, rejectBtn);
+                        approveBtn.textContent = "Approve / 核准";
+                        approveBtn.onclick = () => updateStatus(index, line, "Approved / 核准", approveBtn, rejectBtn);
 
                         let rejectBtn = document.createElement("button");
-                        rejectBtn.textContent = "拒絕";
-                        rejectBtn.onclick = () => updateStatus(index, line, "拒絕", approveBtn, rejectBtn);
+                        rejectBtn.textContent = "Reject / 拒絕";
+                        rejectBtn.onclick = () => updateStatus(index, line, "Rejected / 拒絕", approveBtn, rejectBtn);
 
-                        let actionCell = document.createElement("td");
                         actionCell.appendChild(approveBtn);
                         actionCell.appendChild(document.createElement("br"));
                         actionCell.appendChild(document.createElement("br"));
                         actionCell.appendChild(rejectBtn);
-                        row.appendChild(actionCell);
+                    } else {
+                        actionCell.textContent = "-";
                     }
 
+                    row.appendChild(actionCell);
                     tableBody.appendChild(row);
+                    count++;
                 });
+
+                if (count === 0) {
+                    setStatus("No overtime records found for this supervisor. / 此主管目前沒有加班申請紀錄。");
+                } else {
+                    setStatus("Overtime records loaded. / 加班紀錄已載入。");
+                }
             })
-            .catch(error => console.error('Error loading data:', error));
+            .catch(error => {
+                console.error('Error loading data:', error);
+                setStatus("Failed to load overtime records. Please try again later. / 加班紀錄載入失敗，請稍後再試。");
+            });
         }
 
         function updateStatus(index, line, status, approveBtn, rejectBtn) {
             approveBtn.disabled = true;
             rejectBtn.disabled = true;
 
+            setStatus("Updating approval status... / 更新審核狀態中...");
+
             let newLine = line.trim() + '\t' + status;
 
-            fetch(`https://api.github.com/gists/${GIST_ID}?timestamp=${new Date().getTime()}`,fetchOptions)
+            fetch(`https://api.github.com/gists/${GIST_ID}?timestamp=${new Date().getTime()}`, fetchOptions)
             .then(response => response.json())
             .then(data => {
                 let content = data.files[GIST_FILE_NAME]?.content || "";
@@ -87,62 +187,94 @@
                     })
                 });
             })
-            .then(() => loadData());
-            notifyLeave(line, status);
+            .then(() => {
+                notifyLeave(line, status);
+                loadData();
+            })
+            .catch(error => {
+                console.error('Error updating status:', error);
+                setStatus("Failed to update approval status. / 審核狀態更新失敗。");
+                approveBtn.disabled = false;
+                rejectBtn.disabled = false;
+            });
         }
-        
+
         function notifyLeave(line, status) {
             let cols = line.split('\t');
             const email = new URLSearchParams(window.location.search).get("email");
-            const msg = `${email} ${status} ${line}<br/>\n\n詳情:<a href='https://ambercoltd.github.io/CheckIn/overtimepermit.htm'>https://ambercoltd.github.io/CheckIn/overtimepermit.htm</a>`;
-            // ✅ 若是 eason 自己，就不發送通知
+
+            // 若是 Eason 自己審核，就不發送 CC 通知
             if (email === "eason@amberco.com.tw") return;
-            
-            //發送 Email
+
+            const msg =
+                'Overtime request status updated<br />' +
+                '加班申請審核狀態已更新<br /><br />' +
+                'Supervisor / 主管: ' + email + '<br />' +
+                'Status / 狀態: ' + status + '<br /><br />' +
+                'Name / 姓名: ' + (cols[0] || '') + '<br />' +
+                'Start / 開始: ' + (cols[1] || '') + '<br />' +
+                'End / 結束: ' + (cols[2] || '') + '<br />' +
+                'Overtime Type / 加班類型: ' + (cols[3] || '') + '<br />' +
+                'Reason / 事由: ' + (cols[4] || '') + '<br /><br />' +
+                'Details / 詳情: ' +
+                '<a href="https://ambercoltd.github.io/CheckIn/overtimepermit.htm">' +
+                'https://ambercoltd.github.io/CheckIn/overtimepermit.htm' +
+                '</a>';
+
             let formData = new FormData();
-            formData.append("subject", `${cols[0]}在${cols[2]}的${cols[3]}已${status}`);
+
+            formData.append(
+                "subject",
+                (cols[0] || '') + ' overtime request has been ' + status + ' / 加班申請已' + status
+            );
+
             formData.append("msg", msg);
-            formData.append("to","eason@amberco.com.tw");           
+            formData.append("to", "eason@amberco.com.tw");
+
             fetch(`https://air-rex.com.tw/email.php`, {
                 method: "POST",
                 body: formData
             })
             .then(response => {
-                if (response.ok) {
-                } else {
-                    alert("❌ CC發送失敗，請稍後再試。");
+                if (!response.ok) {
+                    alert("Failed to send CC email. Please try again later.\nCC 發送失敗，請稍後再試。");
                 }
             })
             .catch(error => {
-                alert("❌ CC發送錯誤：" + error.message);
+                alert("CC email error / CC 發送錯誤：" + error.message);
             });
         }
+
         window.onload = loadData;
     </script>
 </head>
+
 <body>
-    <h2>加班審核</h2>
-    <table border="1">
+    <h2>Overtime Approval <span class="zh">加班審核</span></h2>
+
+    <div class="note">
+        Please review the overtime requests assigned to you.<br />
+        請審核分配給您的加班申請。
+    </div>
+
+    <div id="status"></div>
+
+    <table>
         <thead>
             <tr>
-                <th>姓名</th>
-                <th>開始時間</th>
-                <th>結束時間</th>
-                <th>加班</th>
-                <th>事由</th>
-                <th>主管</th>
-                <th>狀態</th>
+                <th>Name<br /><span class="zh">姓名</span></th>
+                <th>Start Time<br /><span class="zh">開始時間</span></th>
+                <th>End Time<br /><span class="zh">結束時間</span></th>
+                <th>Overtime Type<br /><span class="zh">加班類型</span></th>
+                <th>Reason<br /><span class="zh">事由</span></th>
+                <th>Supervisor<br /><span class="zh">主管</span></th>
+                <th>Status<br /><span class="zh">狀態</span></th>
+                <th>Action<br /><span class="zh">操作</span></th>
             </tr>
         </thead>
+
         <tbody id="records">
         </tbody>
     </table>
 </body>
 </html>
-
-
-
-
-
-
-
