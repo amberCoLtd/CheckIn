@@ -104,12 +104,11 @@ function askForName() {
         localStorage.removeItem('name');
 
         while (true) {
-            name = prompt('Please enter your full name.\n請輸入您的姓名。\n\nPlease enter carefully. If your name is wrong, please contact HR/admin to correct it.', '');
+            name = prompt('Please enter your name.\n請輸入您的姓名。\n\nPlease enter carefully. If your name is wrong, USD 20 penalty.\n輸錯姓名罰500元', '');
 
             if (name === null) {
-                document.getElementById('status').innerHTML =
-                    'Please enter a valid name.<br />請輸入正確的姓名。';
-                return null;
+                alert('Please enter a valid name.\n請輸入正確的姓名。');
+                return askForName();
             }
 
             if (isValidName(name)) {
