@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Time Clock System V2.6 / 打卡系統V2.6</title>
+<title>Time Clock / 打卡</title>
 
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
@@ -155,8 +155,8 @@ function updateTitle() {
   const title = document.getElementById("title");
   const status = liff.isLoggedIn() ? "LINE Verified / LINE已認證" : "Not Logged In / 未登入";
   title.textContent = tel
-    ? `📍 ${tel}（${status}） 📍 Time Clock System V2.6 / 打卡系統V2.6`
-    : `📍 Time Clock System V2.6 / 打卡系統V2.6`;
+    ? `📍 ${tel} <br>（${status}）<br>📍 Time Clock V2.6 / 打卡V2.6`
+    : `📍 Time Clock V2.6 / 打卡 V2.6`;
 }
 
 function showLoading() {
@@ -512,8 +512,8 @@ window.onload = async () => {
 <h2 id="title">📍 Time Clock System V2.6 / 打卡系統V2.6</h2>
 
 <div class="note">
-  Please check in only after LINE verification and GPS location are ready.<br>
-  請在 LINE 認證與 GPS 定位完成後再進行打卡。
+  GPS must ON.<br>
+  GPS 定位務必開啟。
 </div>
 
 <button id="btnCheckin" onclick="Update()">Check In / 打卡</button>
