@@ -318,9 +318,8 @@ function updateGist(content, name) {
                     document.getElementById('status').innerHTML =
                         'Your leave request has been submitted. Please confirm with your supervisor.<br />請假申請已提交，請自行與主管確認。';
 
-                    document.getElementById('submitButton').disabled = false;
                     document.getElementById('submitButton').innerHTML =
-                        'Submit Leave Request / 送出請假申請';
+                        'submitted successfully / 已送出';
 
                     fetchLeaveRecords(name);
                 }
