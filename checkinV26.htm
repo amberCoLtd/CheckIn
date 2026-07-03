@@ -155,7 +155,7 @@ function updateTitle() {
   const title = document.getElementById("title");
   const status = liff.isLoggedIn() ? "LINE Verified / LINE已認證" : "Not Logged In / 未登入";
   title.textContent = tel
-    ? `📍 ${tel} <br>（${status}）<br>📍 Time Clock V2.6 / 打卡V2.6`
+    ? `📍 ${tel} \n（${status}）\n📍 Time Clock V2.6 / 打卡V2.6`
     : `📍 Time Clock V2.6 / 打卡 V2.6`;
 }
 
