@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>打卡系統V2.6</title>
+<title>Time Clock System V2.6 / 打卡系統V2.6</title>
 
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
@@ -16,12 +16,23 @@ button {
   padding: 10px 16px;
   font-size: 16px;
   margin-right: 8px;
+  margin-bottom: 8px;
 }
 pre {
   background: #111;
   color: #0f0;
   padding: 10px;
   white-space: pre-wrap;
+}
+.zh {
+  color: #666;
+  font-size: 14px;
+  font-weight: normal;
+}
+.note {
+  color: #666;
+  line-height: 1.5;
+  margin-bottom: 16px;
 }
 #loadingOverlay {
   position: fixed;
@@ -68,19 +79,24 @@ function debug(msg) {
     //el.textContent += msg + "\n";
   }
 }
-/* ================= 基本設定 ================= */
+
+/* ================= Basic Settings / 基本設定 ================= */
 const GIST_ID = "128158194ad773c072ca111b84286cfb";
 const TK_HEX = "6768705F4A3052654D6C75636C6B614B785A63494C4379316C5077754458486C5150313955304361";
 const LIFF_ID = "2010236118-JLFjwKdM";
 
 const ALLOWED_LOCATIONS = [
-  { name: "台北公司", lat: 24.98765303481461, lon: 121.53390134460216, radiusM: 200 },
-  { name: "台中辦公室", lat: 24.310777911896015, lon: 120.72138183688088, radiusM: 3000 },
-  { name: "后里美光", lat: 24.318140260826873, lon: 120.72406839843525, radiusM: 3000 },
-  { name: "台積台南", lat: 23.1179631, lon: 120.2246118, radiusM: 10000 },
+  { name: "Taipei Office / 台北公司", lat: 24.98765303481461, lon: 121.53390134460216, radiusM: 200 },
+  { name: "Taichung Office / 台中辦公室", lat: 24.310777911896015, lon: 120.72138183688088, radiusM: 3000 },
+  { name: "Houli Micron / 后里美光", lat: 24.318140260826873, lon: 120.72406839843525, radiusM: 3000 },
+  { name: "TSMC Tainan / 台積台南", lat: 23.1179631, lon: 120.2246118, radiusM: 10000 },
+  { name: "Amber Japan Office / 日本安博", lat: 34.6642848, lon: 135.4960955, radiusM: 3000 },
+  { name: "Amber US Office / 美國安博", lat: 33.6825472, lon: -112.1026775, radiusM: 1600 },
+  { name: "TSMC Arizona / 台積美國亞歷桑納", lat: 33.7926749, lon: -112.2055389, radiusM: 3200 },
+  
 ];
 
-/* ================= 工具 ================= */
+/* ================= Tools / 工具 ================= */
 function hexToString(hex) {
   let s = '';
   for (let i = 0; i < hex.length; i += 2)
@@ -118,7 +134,7 @@ async function initLiffOnce() {
     lineUserId = profile.userId;
 
     document.getElementById("status").innerHTML =
-      "LINE UID：<br>" + lineUserId;
+      "LINE UID:<br>" + lineUserId;
 
     return true;
 
@@ -127,7 +143,7 @@ async function initLiffOnce() {
     debug(e);
 
     document.getElementById("status").innerHTML =
-      "LIFF錯誤：<br>" + e;
+      "LIFF Error / LIFF 錯誤:<br>" + e;
 
     return false;
   }
@@ -137,10 +153,10 @@ async function initLiffOnce() {
 function updateTitle() {
   const tel = localStorage.getItem("tel");
   const title = document.getElementById("title");
-  const status = liff.isLoggedIn() ? "LINE已認證" : "未登入";
+  const status = liff.isLoggedIn() ? "LINE Verified / LINE已認證" : "Not Logged In / 未登入";
   title.textContent = tel
-    ? `📍 ${tel}（${status}） 📍 打卡系統V2.6`
-    : `📍 打卡系統V2.6`;
+    ? `📍 ${tel}（${status}） 📍 Time Clock System V2.6 / 打卡系統V2.6`
+    : `📍 Time Clock System V2.6 / 打卡系統V2.6`;
 }
 
 function showLoading() {
@@ -157,7 +173,7 @@ function hideLoading() {
 function getTel() {
   let tel = localStorage.getItem("tel");
   if (!tel || !/^\d{10}$/.test(tel)) {
-    tel = prompt("請輸入 10 碼手機號碼：");
+    tel = prompt("Please enter your 10-digit mobile phone number.\n請輸入 10 碼手機號碼：");
     if (!/^\d{10}$/.test(tel)) return null;
     localStorage.setItem("tel", tel);
   }
@@ -190,7 +206,7 @@ function findNearestLocation(lat, lon) {
   return { name: nearest.name, distance: Math.round(min) };
 }
 
-/* ================= 定位 ================= */
+/* ================= Location / 定位 ================= */
 function tryGetLocation() {
   return new Promise((resolve, reject) => {
     navigator.geolocation.getCurrentPosition(
@@ -205,10 +221,10 @@ async function retryLocation() {
   document.getElementById("btnRelocate").style.display = "none";
   try {
     await tryGetLocation();
-    document.getElementById("status").innerText = "✅ 定位成功，請打卡";
+    document.getElementById("status").innerText = "✅ Location successful. Please check in. / 定位成功，請打卡";
     document.getElementById("btnCheckin").style.display = "inline-block";
   } catch {
-    document.getElementById("status").innerText = "❌ 尚未開啟定位權限";
+    document.getElementById("status").innerText = "❌ Location permission is not enabled. / 尚未開啟定位權限";
     document.getElementById("btnRelocate").style.display = "inline-block";
     Update();
   }
@@ -229,7 +245,7 @@ async function githubGET() {
 async function getGistData() {
   if (gistCache) return gistCache;
   const res = await githubGET();
-  if (!res.ok) throw new Error("Gist 連線失敗");
+  if (!res.ok) throw new Error("Failed to connect to Gist / Gist 連線失敗");
   gistCache = await res.json();
   return gistCache;
 }
@@ -267,24 +283,24 @@ async function loadUIDFile() {
   }
 }
 
-/* ================= 讀取紀錄 ================= */
+/* ================= Load Records / 讀取紀錄 ================= */
 async function loadMyFile() {
   try {
     const data = await getGistData();
     const file = data.files[getFileName()];
     if (!file) {
-      document.getElementById("records").textContent = "尚無打卡紀錄";
+      document.getElementById("records").textContent = "No time clock records yet. / 尚無打卡紀錄";
       return;
     }
     document.getElementById("records").textContent = file.content;
   } catch {
     document.getElementById("freePass").style.display = "block";
     document.getElementById("btnCheckin").style.display = "none";
-    document.getElementById("status").innerText = "⚠ 系統異常，暫停使用";
+    document.getElementById("status").innerText = "⚠ System error. Service is temporarily unavailable. / 系統異常，暫停使用";
   }
 }
 
-/* ================= 打卡 ================= */
+/* ================= Check In / 打卡 ================= */
 async function getLocationSafe() {
   try {
     const pos = await tryGetLocation();
@@ -303,7 +319,7 @@ async function getLocationSafe() {
   } catch (e) {
     return {
       ok: false,
-      text: "用戶拒絕提供",
+      text: "User denied location access / 用戶拒絕提供定位",
       distance: 999999,
       locationName: ""
     };
@@ -316,62 +332,70 @@ async function Update() {
   showLoading();
 
   try {
+    // ① Try to get location. This will not throw.
     // ① 嘗試取得定位（不會 throw）
     const locResult = await getLocationSafe();
+
     // =====================
+    // Distance + overtime check
     // 距離 + 加班檢查
     // =====================
     const warnings = [];
-    
+
     if (locResult.ok) {
-    
+
       const nearestOffice = ALLOWED_LOCATIONS.find(
         x => x.name === locResult.locationName
       );
-    
+
       if (
         nearestOffice &&
         locResult.distance > nearestOffice.radiusM
       ) {
         warnings.push(
-          `📍 超出打卡範圍\n` +
-          `位置：${locResult.locationName}\n` +
-          `距離：${locResult.distance}m\n` +
-          `允許：${nearestOffice.radiusM}m`
+          `📍 Outside the allowed check-in range / 超出打卡範圍\n` +
+          `Location / 位置：${locResult.locationName}\n` +
+          `Distance / 距離：${locResult.distance}m\n` +
+          `Allowed range / 允許範圍：${nearestOffice.radiusM}m`
         );
       }
     }
-    
+
     const now = new Date();
     const hhmm = now.getHours() * 100 + now.getMinutes();
-    
+
     if (hhmm < 800 || hhmm >= 1800) {
       warnings.push(
-        "⏰ 已進入加班時間\n請確認是否已送出加班申請單"
+        "⏰ This is overtime hours. / 已進入加班時間\n" +
+        "Please confirm that you have submitted an overtime request form. / 請確認是否已送出加班申請單"
       );
     }
-    
+
     if (warnings.length > 0) {
-    
+
       const msg =
-        "⚠ 注意\n\n" +
+        "⚠ Notice / 注意\n\n" +
         warnings.join("\n\n") +
-        "\n\n是否仍要打卡？";
-    
+        "\n\nDo you still want to check in? / 是否仍要打卡？";
+
       if (!confirm(msg)) {
         hideLoading();
         return;
       }
     }
+
+    // ② Create timestamp
     // ② 組時間
     const timeStr =
       `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ` +
       `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
 
+    // ③ Create record line
     // ③ 組紀錄行
     const line =
       `050\t${timeStr}\t${getTel()}\t${locResult.text}`;
 
+    // ④ Read old records
     // ④ 讀舊資料
     const data = await getGistData();
     const old = data.files[getFileName()]?.content || "";
@@ -391,6 +415,7 @@ async function Update() {
     filtered.unshift(line);
     const finalContent = filtered.join("\r\n");
 
+    // ⑤ Write back to Gist
     // ⑤ 寫回 Gist
     await githubPATCH({
       files: {
@@ -400,27 +425,28 @@ async function Update() {
 
     gistCache = null;
 
+    // ⑥ UI feedback
     // ⑥ UI 回饋
     document.getElementById("status").innerText =
       locResult.ok
-        ? "✅ 打卡成功"
-        : "⚠ 打卡成功（未提供定位）";
+        ? "✅ Check-in successful. / 打卡成功"
+        : "⚠ Check-in successful, but location was not provided. / 打卡成功（未提供定位）";
 
     document.getElementById("records").textContent = finalContent;
 
   } catch (e) {
-    alert("❌ 打卡失敗：請截圖通知MIS\n" + e);
+    alert("❌ Check-in failed. Please take a screenshot and notify MIS.\n打卡失敗：請截圖通知 MIS\n\n" + e);
   } finally {
     hideLoading();
   }
 }
 
 
-/* ================= 啟動 ================= */
+/* ================= Start / 啟動 ================= */
 window.onload = async () => {
 
   document.getElementById("status").innerHTML =
-    "LIFF初始化中...";
+    "Initializing LIFF... / LIFF 初始化中...";
 
   document.getElementById("btnCheckin").style.display = "none";
 
@@ -433,19 +459,19 @@ window.onload = async () => {
   if (!lineUserId) {
 
     document.getElementById("status").innerHTML =
-      "❌ 無法取得LINE UID";
+      "❌ Unable to get LINE UID. / 無法取得 LINE UID";
 
     return;
   }
 
   document.getElementById("status").innerHTML =
-    "✅ UID取得成功<br>" + lineUserId;
+    "✅ LINE UID acquired successfully. / UID 取得成功<br>" + lineUserId;
 
   const hasUID = await loadUIDFile();
 
   if (!hasUID) {
 
-    alert("首次使用請輸入手機");
+    alert("First-time users must enter a mobile phone number.\n首次使用請輸入手機號碼。");
 
     localStorage.removeItem("tel");
     getTel();
@@ -460,7 +486,7 @@ window.onload = async () => {
     await tryGetLocation();
 
     document.getElementById("status").innerHTML +=
-      "<br>✅ GPS正常";
+      "<br>✅ GPS is working properly. / GPS 正常";
 
     document.getElementById("btnCheckin").style.display =
       "inline-block";
@@ -468,7 +494,7 @@ window.onload = async () => {
   } catch (e) {
 
     document.getElementById("status").innerHTML +=
-      "<br>⚠ GPS失敗：" + e.message;
+      "<br>⚠ GPS failed / GPS 失敗：" + e.message;
 
     document.getElementById("btnRelocate").style.display =
       "inline-block";
@@ -483,18 +509,25 @@ window.onload = async () => {
   <div class="spinner"></div>
 </div>
 
-<h2 id="title">📍 打卡系統V2.6</h2>
+<h2 id="title">📍 Time Clock System V2.6 / 打卡系統V2.6</h2>
 
-<button id="btnCheckin" onclick="Update()">打卡</button>
-<button id="btnRelocate" style="display:none" onclick="retryLocation()">📍 定位權限錯誤</button>
-
-<p id="status"></p>
-  
-<div id="freePass">
-  🎉 卡機壞了！<br>今天大放送，不用打卡 😆
+<div class="note">
+  Please check in only after LINE verification and GPS location are ready.<br>
+  請在 LINE 認證與 GPS 定位完成後再進行打卡。
 </div>
 
-<h3>📄 我的紀錄</h3>
+<button id="btnCheckin" onclick="Update()">Check In / 打卡</button>
+<button id="btnRelocate" style="display:none" onclick="retryLocation()">📍 Location Permission Error / 定位權限錯誤</button>
+
+<p id="status"></p>
+
+<div id="freePass">
+  🎉 The time clock system is unavailable today!<br>
+  No check-in is required for now. 😆<br>
+  <span class="zh">卡機壞了！今天暫時不用打卡 😆</span>
+</div>
+
+<h3>📄 My Records <span class="zh">我的紀錄</span></h3>
 <pre id="records"></pre>
 
 </body>
