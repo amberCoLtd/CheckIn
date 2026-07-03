@@ -125,9 +125,8 @@
                         row.appendChild(cell);
                     });
 
-                    let actionCell = document.createElement("td");
-
                     if ((cols.length < 7 || !cols[6]?.trim()) && email === cols[5].trim()) {
+                        let actionCell = document.createElement("td");
                         let approveBtn = document.createElement("button");
                         approveBtn.textContent = "Approve / 核准";
                         approveBtn.onclick = () => updateStatus(index, line, "Approved / 核准", approveBtn, rejectBtn);
@@ -140,10 +139,9 @@
                         actionCell.appendChild(document.createElement("br"));
                         actionCell.appendChild(document.createElement("br"));
                         actionCell.appendChild(rejectBtn);
-                    } else {
+                        row.appendChild(actionCell);
                     }
 
-                    row.appendChild(actionCell);
                     tableBody.appendChild(row);
                     count++;
                 });
