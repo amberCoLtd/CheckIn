@@ -292,13 +292,11 @@ function updateGist(content, name) {
 
             patchXhr.onreadystatechange = function () {
                 if (patchXhr.readyState === 4) {
-                    alert('Successfully.\n\n已成功送出');
                     document.getElementById('status').innerHTML =
                         'Your overtime request has been submitted. Please confirm with your supervisor.<br />加班申請已提交，請自行與主管確認。';
 
-                    document.getElementById('submitButton').disabled = false;
                     document.getElementById('submitButton').innerHTML =
-                        'Submit Overtime Request / 送出加班申請';
+                        'Successfully submitted / 已送出';
 
                     fetchOvertimeRecords(name);
                 }
