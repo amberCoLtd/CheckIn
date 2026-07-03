@@ -154,9 +154,7 @@ function updateTitle() {
   const tel = localStorage.getItem("tel");
   const title = document.getElementById("title");
   const status = liff.isLoggedIn() ? "LINE Verified / LINE已認證" : "Not Logged In / 未登入";
-  title.textContent = tel
-    ? `📍 ${tel} \\n（${status}）\\n📍 Time Clock V2.6 / 打卡V2.6`
-    : `📍 Time Clock V2.6 / 打卡 V2.6`;
+  title.textContent =`📍 ${status} ${tel}`;
 }
 
 function showLoading() {
@@ -509,14 +507,14 @@ window.onload = async () => {
   <div class="spinner"></div>
 </div>
 
-<h2 id="title">📍 Time Clock System V2.6 / 打卡系統V2.6</h2>
+<h2 id="title">📍 Time Clock / 打卡系統 </h2>
 
 <div class="note">
   GPS must ON.<br>
   GPS 定位務必開啟。
 </div>
 
-<button id="btnCheckin" onclick="Update()">Check In / 打卡</button>
+<button id="btnCheckin" onclick="Update()">Check In / 打卡 V2.6</button>
 <button id="btnRelocate" style="display:none" onclick="retryLocation()">📍 Location Permission Error / 定位權限錯誤</button>
 
 <p id="status"></p>
