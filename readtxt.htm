@@ -129,8 +129,10 @@ async function loadAllRecords() {
 
       const location = normalizeLocation(parts[3]);
       const dist = getDistanceFromText(location);
-
-      const isAbnormal = (dist === null || dist > 3000);
+      
+      const isAbnormal =
+        (location || "").includes("超出打卡範圍") ||
+        dist === null;
 
       rows.push({
         time,
