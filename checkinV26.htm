@@ -93,6 +93,7 @@ const ALLOWED_LOCATIONS = [
   { name: "Taichung Office / 台中辦公室", lat: 24.310777911896015, lon: 120.72138183688088, radiusM: 100 },
   { name: "Houli Micron / 后里美光", lat: 24.318140260826873, lon: 120.72406839843525, radiusM: 300 },
   { name: "TSMC Tainan / 台積台南", lat: 23.1179631, lon: 120.2246118, radiusM: 200 },
+  { name: "Tainan fac. / 台南預置場", lat: 23.0682997, lon: 120.2069099, radiusM: 200 },
   { name: "TSMC 14P6 / 台積14P6", lat: 23.1146066, lon: 120.2647323, radiusM: 200 },
   { name: "Tainan Office / 台南辦公室", lat: 23.1173507, lon: 120.3083209, radiusM: 100 },
   { name: "AWSC / 宏捷科", lat: 23.1079422, lon: 120.2772488, radiusM: 200 },
@@ -358,9 +359,8 @@ async function Update() {
       ) {
         warnings.push(
           `📍 Outside the allowed check-in range / 超出打卡範圍\n` +
-          `Location / 位置：${locResult.locationName}\n` +
-          `Distance / 距離：${locResult.distance}m\n` +
-          `Allowed range / 允許範圍：${nearestOffice.radiusM}m`
+          `${locResult.locationName}\n` +
+          `${locResult.distance}m\n > ${nearestOffice.radiusM}m`
         );
       }
     }
