@@ -395,9 +395,23 @@ async function Update() {
 
     // ③ Create record line
     // ③ 組紀錄行
+    let extra = "";
+    
+    if (locResult.ok) {
+      const nearestOffice = ALLOWED_LOCATIONS.find(
+        x => x.name === locResult.locationName
+      );
+    
+      if (
+        nearestOffice &&
+        locResult.distance > nearestOffice.radiusM
+      ) {
+        extra = "\t(超出打卡範圍)";
+      }
+    }
+    
     const line =
-      `050\t${timeStr}\t${getTel()}\t${locResult.text}`;
-
+      `050\t${timeStr}\t${getTel()}\t${locResult.text}${extra}`;
     // ④ Read old records
     // ④ 讀舊資料
     const data = await getGistData();
