@@ -81,11 +81,6 @@ const TOKEN = hexToString(TK_HEX);
 
 let recordCache = [];
 
-function normalizeLocation(str) {
-  // 將「公尺」轉成 m
-  return str.replace(/公尺/g, "m");
-}
-
 function getDistanceFromText(text) {
   const match = text.match(/(\d+)\s*m/);
   return match ? parseInt(match[1], 10) : null;
@@ -127,12 +122,10 @@ async function loadAllRecords() {
 
       if (now - time > DAYS_60) continue;
 
-      const location = normalizeLocation(parts[3]);
+      const location = parts[3];
       const dist = getDistanceFromText(location);
       
-      const isAbnormal =
-        (location || "").includes("超出打卡範圍") ||
-        dist === null;
+      const isAbnormal = location.includes("超出") || dist === null;
 
       rows.push({
         time,
