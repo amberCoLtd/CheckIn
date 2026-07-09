@@ -360,7 +360,7 @@ async function Update() {
         warnings.push(
           `📍 Outside the allowed check-in range / 超出打卡範圍\n` +
           `${locResult.locationName}\n` +
-          `${locResult.distance}m\n > ${nearestOffice.radiusM}m`
+          `${locResult.distance}m > ${nearestOffice.radiusM}m`
         );
       }
     }
@@ -370,8 +370,7 @@ async function Update() {
 
     if (hhmm < 800 || hhmm >= 1800) {
       warnings.push(
-        "⏰ This is overtime hours. / 已進入加班時間\n" +
-        "Please confirm that you have submitted an overtime request form. / 請確認是否已送出加班申請單"
+        "⏰ This is overtime hours.\n Please confirm that you have submitted an overtime request form. / 已進入加班時間\n請確認是否已送出加班申請單" 
       );
     }
 
